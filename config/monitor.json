@@ -1,0 +1,23 @@
+{
+  "columns": 4,
+  "rows": 3,
+  "panels": [
+    { "id": "cpu",   "type": "cpu",   "title": "CPU",       "span": [2, 1] },
+    { "id": "mem",   "type": "mem",   "title": "MEMORIA",   "span": [1, 1] },
+    { "id": "sys",   "type": "sys",   "title": "SISTEMA",   "span": [1, 1] },
+    { "id": "procs", "type": "procs", "title": "PROCESOS",  "span": [2, 2], "n": 25 },
+    { "id": "net",   "type": "net",   "title": "RED",       "span": [2, 1] },
+    { "id": "disk",  "type": "disk",  "title": "DISCO",     "span": [1, 1], "mounts": ["/"] },
+    {
+      "id": "api",
+      "type": "http",
+      "title": "API (EJEMPLO)",
+      "span": [1, 1],
+      "_nota": "Ejemplo: GitHub Zen es una API publica, sin clave y estable. Cambia url/field para vigilar tu propia API. 'headers' (p. ej. Authorization) nunca sale al navegador.",
+      "url": "https://api.github.com/zen",
+      "method": "GET",
+      "interval_s": 30,
+      "expect_status": 200
+    }
+  ]
+}
