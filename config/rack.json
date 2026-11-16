@@ -1,0 +1,55 @@
+{
+  "_nota": "Ejemplo inocuo: solo comprueba esta máquina y example.com. Copia este archivo a ~/.config/pixel-desk/rack.json y edítalo (se recarga solo). Tipos: tcp, http, tls, ping, dns, docker.",
+  "racks": [
+    {
+      "id": "local",
+      "title": "RACK LOCAL",
+      "nodes": [
+        {
+          "id": "localhost",
+          "name": "localhost",
+          "group": "esta maquina",
+          "host": "127.0.0.1",
+          "ssh": "127.0.0.1",
+          "interval_s": 30,
+          "checks": [
+            { "type": "ping" },
+            { "type": "dns", "name": "localhost" },
+            { "type": "tcp", "port": 22 }
+          ]
+        },
+        {
+          "id": "puertos",
+          "name": "puertos de prueba",
+          "group": "esta maquina",
+          "host": "127.0.0.1",
+          "interval_s": 30,
+          "checks": [
+            { "type": "tcp", "port": 9 },
+            { "type": "tcp", "port": 631 }
+          ]
+        },
+        {
+          "id": "docker",
+          "name": "docker local",
+          "group": "esta maquina",
+          "interval_s": 30,
+          "checks": [
+            { "type": "docker", "container": "ejemplo" }
+          ]
+        },
+        {
+          "id": "ejemplo",
+          "name": "EJEMPLO example.com",
+          "group": "sitio publico de ejemplo",
+          "host": "example.com",
+          "interval_s": 60,
+          "checks": [
+            { "type": "http", "url": "https://example.com/", "expect_status": 200 },
+            { "type": "tls", "host": "example.com", "port": 443 }
+          ]
+        }
+      ]
+    }
+  ]
+}
