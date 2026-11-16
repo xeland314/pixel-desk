@@ -2,7 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
+	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -72,11 +76,23 @@ func init() {
 			switch r.Method {
 			case http.MethodGet:
 				b := boardDefault()
-				if raw, err := os.ReadFile(boardPath()); err == nil {
+				raw, err := os.ReadFile(boardPath())
+				switch {
+				case err == nil:
 					var saved boardData
 					if json.Unmarshal(raw, &saved) == nil {
 						b = saved
+					} else {
+						// Corrupto: se aparta antes de servir el ejemplo, porque el
+						// siguiente PUT lo sobrescribiría y se perderían las notas.
+						bad := fmt.Sprintf("%s.corrupto-%d", boardPath(), time.Now().Unix())
+						os.Rename(boardPath(), bad)
+						log.Printf("board.json ilegible, apartado en %s", bad)
 					}
+				case !errors.Is(err, fs.ErrNotExist):
+					// Existe pero no se puede leer: mejor error que pisarlo.
+					http.Error(w, "no se pudo leer el tablero", http.StatusInternalServerError)
+					return
 				}
 				boardNormalize(&b)
 				sendJSON(w, b)

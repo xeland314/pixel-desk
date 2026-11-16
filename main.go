@@ -1,11 +1,11 @@
 // pixel-desk — escritorio pixel-art 2.5D para X11.
 //
 // Un binario Go que:
-//   1. sirve la escena (three.js) desde un servidor local embebido,
-//   2. la muestra en una ventana GTK3 + WebKitGTK del sistema,
-//   3. con -desktop marca la ventana como _NET_WM_WINDOW_TYPE_DESKTOP,
-//      de modo que queda detrás de todas las demás como fondo interactivo,
-//   4. lanza las apps de config/apps.json cuando la escena lo pide.
+//  1. sirve la escena (three.js) desde un servidor local embebido,
+//  2. la muestra en una ventana GTK3 + WebKitGTK del sistema,
+//  3. con -desktop marca la ventana como _NET_WM_WINDOW_TYPE_DESKTOP,
+//     de modo que queda detrás de todas las demás como fondo interactivo,
+//  4. lanza las apps de config/apps.json cuando la escena lo pide.
 //
 // WebKitGTK se enlaza contra la librería de runtime (no hace falta el
 // paquete -dev): por eso los prototipos de webkit_* van declarados a mano.
