@@ -1,0 +1,180 @@
+/* Cuarto 3: monitor del sistema. Marco con tokens del tema (cambia en
+   claro/oscuro); el interior de cada pantalla usa --screen (oscuro siempre). */
+
+.mon-wall {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: calc(var(--u) * 4);
+  padding: var(--u);
+}
+
+.mon-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--panel);
+  box-shadow:
+    0 calc(var(--u) * -1) 0 0 var(--line),
+    0 var(--u) 0 0 var(--line),
+    calc(var(--u) * -1) 0 0 0 var(--line),
+    var(--u) 0 0 0 var(--line);
+}
+.mon-panel.sel {
+  box-shadow:
+    0 calc(var(--u) * -1) 0 0 var(--accent),
+    0 var(--u) 0 0 var(--accent),
+    calc(var(--u) * -1) 0 0 0 var(--accent),
+    var(--u) 0 0 0 var(--accent);
+}
+
+.mon-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+  height: calc(var(--u) * 9);
+  padding: 0 calc(var(--u) * 3);
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.mon-panel.sel .mon-head { color: var(--accent); }
+.mon-title { flex: 1; overflow: hidden; text-overflow: clip; }
+.mon-meta {
+  font-family: var(--font-term);
+  font-weight: 400;
+  font-size: 18px;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+/* LED de estado: cuadrado, parpadea a saltos (lo mueve step()). */
+.mon-led {
+  flex: none;
+  width: calc(var(--u) * 3);
+  height: calc(var(--u) * 3);
+  background: var(--muted);
+}
+.mon-led.ok { background: var(--sem-ok); }
+.mon-led.warn { background: var(--accent); }
+.mon-led.bad { background: var(--sem-bad); }
+.mon-led.off { opacity: 0.35; }
+
+/* La pantalla (CRT): fondo oscuro, texto VT323 y scanlines de 3 px. */
+.mon-screen {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0 calc(var(--u) * 2) calc(var(--u) * 2);
+  padding: calc(var(--u) * 2) calc(var(--u) * 3);
+  background: var(--screen);
+  color: var(--sem-ok);
+  font-family: var(--font-term);
+  font-size: 22px;
+  line-height: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+}
+.mon-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent var(--u),
+    rgba(0, 0, 0, 0.22) var(--u),
+    rgba(0, 0, 0, 0.22) calc(var(--u) * 2)
+  );
+}
+
+.c-ok { color: var(--sem-ok); }
+.c-alt { color: var(--sem-alt); }
+.c-acc { color: var(--accent); }
+.c-bad { color: var(--sem-bad); }
+.c-dim { color: #6f7a6f; }
+
+.mon-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(var(--u) * 3);
+  white-space: nowrap;
+}
+.mon-big {
+  font-size: 54px;
+  line-height: 0.9;
+}
+.mon-sm { font-size: 19px; }
+
+/* Barras de bloques y sparklines: canvas pequeño escalado sin suavizado. */
+.mon-bar, .mon-spark {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  flex: none;
+}
+.mon-spark-wrap { flex: 1; min-height: calc(var(--u) * 6); position: relative; }
+.mon-spark-wrap canvas { position: absolute; left: 0; bottom: 0; }
+
+.mon-cores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  column-gap: calc(var(--u) * 4);
+  row-gap: calc(var(--u) * 1);
+  align-content: start;
+}
+.mon-core {
+  display: grid;
+  grid-template-columns: 3ch 1fr 4ch;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  font-size: 18px;
+}
+.mon-core .pct { text-align: right; }
+
+/* Tabla de procesos */
+.mon-table { display: flex; flex-direction: column; gap: 0; }
+.mon-tr {
+  display: grid;
+  grid-template-columns: 8ch 1fr 7ch 7ch;
+  gap: calc(var(--u) * 2);
+  white-space: nowrap;
+  line-height: 1.25;
+}
+.mon-tr > :nth-child(3), .mon-tr > :nth-child(4) { text-align: right; }
+.mon-tr > :nth-child(2) { overflow: hidden; }
+.mon-th { color: var(--accent); border-bottom: var(--u) solid #243024; margin-bottom: var(--u); }
+.mon-th .sorted { text-decoration: underline; }
+
+.mon-kv {
+  display: grid;
+  grid-template-columns: 9ch 1fr;
+  gap: calc(var(--u) * 1) calc(var(--u) * 3);
+  align-content: start;
+}
+.mon-kv > :nth-child(odd) { color: var(--sem-alt); }
+.mon-kv > :nth-child(even) { overflow: hidden; white-space: nowrap; }
+
+.mon-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  font-size: 30px;
+  color: var(--sem-bad);
+  background: rgba(11, 11, 11, 0.8);
+  text-align: center;
+}
+.mon-msg[hidden] { display: none; }
