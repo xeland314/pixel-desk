@@ -336,7 +336,8 @@ item('music', 46, 0, 0, (g) => {
   arm.rotation.y = 0.35;
   box(g, 4, 5, 4, C.sand, 16, 10, -12);
   box(g, 2, 2, 1, C.ok, -16, 3, 17.2);
-  return { tick: (step) => { disc.rotation.y = -(step % 16) * (Math.PI / 8); } };
+  // El disco gira mientras suena (o si no se sabe: aún no se ha consultado).
+  return { tick: (step) => { if (!music || music.status === 'Playing') disc.rotation.y = -(step % 16) * (Math.PI / 8); } };
 });
 
 // Slides: caballete con una diapositiva (lanza slides.c).
@@ -476,7 +477,12 @@ function updateOverlay() {
   const at = toScreen(top);
   const m = meta[selected.id] || { label: selected.id.toUpperCase(), hint: '' };
   titleEl.textContent = m.label;
-  if (performance.now() > busyUntil) { labelEl.className = ''; hintEl.textContent = m.hint; }
+  if (performance.now() > busyUntil) {
+    labelEl.className = '';
+    hintEl.textContent = selected.id === 'music' && music && music.title
+      ? `${music.status === 'Playing' ? '>' : '||'} ${music.title}${music.artist ? ` · ${music.artist}` : ''}`
+      : m.hint;
+  }
   labelEl.style.left = `${Math.round(at.x / 3) * 3}px`;
   labelEl.style.top = `${Math.round(at.y / 3) * 3}px`;
   labelEl.hidden = false;
@@ -542,6 +548,11 @@ addEventListener('keydown', (ev) => {
     return;
   }
   if (!rooms.onDesk()) return;
+  if (selected && selected.id === 'music' && [' ', ',', '.'].includes(ev.key)) {
+    musicCmd({ ' ': 'playpause', ',': 'previous', '.': 'next' }[ev.key]);
+    ev.preventDefault();
+    return;
+  }
   const i = order.indexOf(selected);
   if (ev.key === 'ArrowRight') setSelected(order[(i + 1) % order.length]);
   else if (ev.key === 'ArrowLeft') setSelected(order[(i - 1 + order.length) % order.length]);
@@ -570,12 +581,45 @@ function resize() {
 }
 addEventListener('resize', resize);
 
+// ── Tocadiscos ↔ reproductor (MPRIS, ver mpris.go) ──────────────────────────
+// Solo se consulta con el cuarto 1 visible, sin modal y con el tocadiscos
+// seleccionado: cada 2 s (16 pasos).
+let music = null;        // { player, status, title, artist }
+let musicAt = -99;
+let musicBusy = false;
+async function pollMusic() {
+  if (musicBusy) return;
+  musicBusy = true;
+  try {
+    const r = await fetch('/api/music', { headers: { 'X-Desk-Token': TOKEN } });
+    if (r.ok) { music = await r.json(); if (!music.player) music = null; dirty = true; }
+  } catch (err) {
+    console.warn('music', err);
+  } finally {
+    musicBusy = false;
+  }
+}
+async function musicCmd(cmd) {
+  try {
+    await fetch(`/api/music?cmd=${cmd}`, { method: 'POST', headers: { 'X-Desk-Token': TOKEN } });
+  } catch (err) {
+    console.warn('music', cmd, err);
+  }
+  setTimeout(pollMusic, 300);
+}
+function musicStep(s) {
+  if (rooms.onDesk() && !panels.isOpen() && selected && selected.id === 'music' && s - musicAt >= 16) {
+    musicAt = s;
+    pollMusic();
+  }
+}
+
 // ── Cuartos ─────────────────────────────────────────────────────────────────
 const rooms = createRooms({
   desk: {
     id: 'desk',
     label: 'ESCRITORIO',
-    hints: [['← →', 'MOVER'], ['ENTER', 'ABRIR'], ['1-9', 'DIRECTO', 'hint-direct']],
+    hints: [['← →', 'MOVER'], ['ENTER', 'ABRIR'], ['1-9', 'DIRECTO', 'hint-direct'], ['ESPACIO , .', 'MÚSICA']],
   },
   modules: [board, monitor],
   ctxBase: {
@@ -622,6 +666,7 @@ function frame(ts) {
     }
     updateDate(now);
     rooms.step(step, now);
+    musicStep(step);
   }
   if (dirty && rooms.deskVisible()) {
     dirty = false;
