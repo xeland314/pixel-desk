@@ -1,0 +1,15 @@
+[
+  { "id": "files",    "label": "ARCHIVOS", "hint": "pcmanfm-qt",   "cmd": ["pcmanfm-qt"] },
+  { "id": "terminal", "label": "TERMINAL", "hint": "qterminal",    "cmd": ["qterminal"] },
+  { "id": "code",     "label": "CODIGO",   "hint": "code",         "cmd": ["code"] },
+  { "id": "launcher", "label": "LANZADOR", "hint": "rofi drun",    "cmd": ["rofi", "-show", "drun"] },
+  { "id": "music",    "label": "MUSICA",   "hint": "spotify · escritorio 8",
+    "cmd": ["./scripts/spotify-desk.sh", "8"],
+    "cwd": "~/workspace/active/this_pc/pixel-desk" },
+  { "id": "browser",  "label": "WEB",      "hint": "brave",        "cmd": ["brave-browser"] },
+  { "id": "slides",   "label": "SLIDES",   "hint": "slides.c",
+    "cmd": ["~/workspace/tools/bin/slides", "example.md"],
+    "cwd": "~/workspace/active/lateral-panel" },
+  { "id": "settings", "label": "AJUSTES",  "hint": "lxqt-config",  "cmd": ["lxqt-config"] },
+  { "id": "leave",    "label": "SALIR",    "hint": "apagar / cerrar sesion", "cmd": ["lxqt-leave"] }
+]
