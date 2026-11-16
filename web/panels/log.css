@@ -1,0 +1,153 @@
+/* Panel: bitácora rápida. Solo tokens (var(--…)), bordes escalonados con
+   box-shadow, sin radios ni blur. */
+
+.lg { display: flex; flex-direction: column; gap: calc(var(--u) * 4); }
+
+.lg-types, .lg-actions, .lg-stats, .lg-fix { display: flex; align-items: center; gap: calc(var(--u) * 3); flex-wrap: wrap; }
+.lg-types { color: var(--muted); font-family: var(--font-label); font-size: 12px; letter-spacing: 0.12em; }
+
+.lg-btn {
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: none;
+  padding: calc(var(--u) * 2) calc(var(--u) * 3);
+  cursor: pointer;
+  box-shadow:
+    0 calc(var(--u) * -1) 0 0 var(--line),
+    0 var(--u) 0 0 var(--line),
+    calc(var(--u) * -1) 0 0 0 var(--line),
+    var(--u) 0 0 0 var(--line);
+}
+.lg-btn:hover { color: var(--accent); }
+.lg-btn.on, .lg-btn.main {
+  color: var(--ground);
+  background: var(--accent);
+  box-shadow:
+    0 calc(var(--u) * -1) 0 0 var(--accent),
+    0 var(--u) 0 0 var(--accent),
+    calc(var(--u) * -1) 0 0 0 var(--accent),
+    var(--u) 0 0 0 var(--accent);
+}
+.lg-btn:disabled { opacity: 0.5; cursor: default; }
+.lg-btn kbd { font: inherit; opacity: 0.7; margin-right: var(--u); }
+
+/* ── Entrada ───────────────────────────────────────────────────────────── */
+.lg-input {
+  width: 100%;
+  display: block;
+  resize: none;
+  font-family: var(--font-term);
+  font-size: 27px;
+  line-height: 1.15;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: none;
+  outline: none;
+  padding: calc(var(--u) * 3) calc(var(--u) * 4);
+  user-select: text;
+  -webkit-user-select: text;
+  caret-color: var(--accent);
+  box-shadow:
+    0 calc(var(--u) * -1) 0 0 var(--line),
+    0 var(--u) 0 0 var(--line),
+    calc(var(--u) * -1) 0 0 0 var(--line),
+    var(--u) 0 0 0 var(--line);
+}
+.lg-input::placeholder { color: var(--muted); opacity: 1; }
+.lg-input:focus {
+  box-shadow:
+    0 calc(var(--u) * -1) 0 0 var(--accent),
+    0 var(--u) 0 0 var(--accent),
+    calc(var(--u) * -1) 0 0 0 var(--accent),
+    var(--u) 0 0 0 var(--accent);
+}
+.lg.editing .lg-input { background: var(--accent-dim); }
+
+.lg-fix {
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+.lg-fix[hidden] { display: none; }
+.lg-fix b { color: var(--ink); }
+
+/* ── Cifras y exportación ──────────────────────────────────────────────── */
+.lg-stats {
+  justify-content: space-between;
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+.lg-count b { font-family: var(--font-term); font-weight: 400; font-size: 27px; letter-spacing: 0; color: var(--accent); margin-left: var(--u); margin-right: calc(var(--u) * 4); }
+.lg-status { font-family: var(--font-term); font-size: 21px; letter-spacing: 0; color: var(--muted); user-select: text; -webkit-user-select: text; word-break: break-all; }
+.lg-status.ok { color: var(--sem-ok); }
+.lg-status.bad { color: var(--sem-bad); }
+:root[data-theme="light"] .lg-status.ok { color: var(--cat-brown); }
+
+/* ── Registro ──────────────────────────────────────────────────────────── */
+.lg-list { max-height: 360px; overflow-y: auto; padding-right: calc(var(--u) * 2); }
+.lg-day {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  padding: calc(var(--u) * 2) 0;
+  margin-top: calc(var(--u) * 2);
+  border-bottom: var(--u) solid var(--line);
+}
+.lg-day:first-child { margin-top: 0; }
+.lg-day i { font-style: normal; color: var(--muted); }
+.lg-row {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--u) * 3);
+  padding: calc(var(--u) * 2) 0;
+  font-family: var(--font-term);
+  font-size: 24px;
+  line-height: 1.1;
+}
+.lg-row.last { background: var(--panel-2); }
+.lg-time { flex: none; color: var(--muted); }
+.lg-text { min-width: 0; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.lg-empty { font-family: var(--font-term); font-size: 24px; color: var(--muted); padding: calc(var(--u) * 4) 0; }
+
+.lg-chip {
+  flex: none;
+  align-self: center;
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cat-brown);
+  background: var(--chip, var(--accent));
+  padding: var(--u) calc(var(--u) * 2);
+  box-shadow:
+    0 calc(var(--u) * -1) 0 0 var(--chip, var(--accent)),
+    0 var(--u) 0 0 var(--chip, var(--accent)),
+    calc(var(--u) * -1) 0 0 0 var(--chip, var(--accent)),
+    var(--u) 0 0 0 var(--chip, var(--accent));
+}
+.lg-chip.t-incidencia { --chip: var(--sem-bad); }
+.lg-chip.t-cambio { --chip: var(--accent); }
+.lg-chip.t-consulta { --chip: var(--sem-alt); }
+.lg-chip.t-nota { --chip: var(--cat-sage); }
+.lg-chip.c0 { --chip: var(--sem-ok); }
+.lg-chip.c1 { --chip: var(--sem-magic); }
+.lg-chip.c2 { --chip: var(--tok-num); }
+.lg-chip.c3 { --chip: var(--tok-fn); }
+.lg-chip.c4 { --chip: var(--cat-rust); }
+.lg-chip.c5 { --chip: var(--cat-sand); }
+
+.lg-types .lg-chip { cursor: pointer; border: none; }
+.lg-types .lg-chip.sel { color: var(--ink); background: var(--panel-2); }
