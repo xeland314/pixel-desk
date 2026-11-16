@@ -5,6 +5,9 @@
 // frontales quedan 1:1 con la rejilla de píxeles; solo la profundidad se
 // inclina. El movimiento va cuantizado a 8 fps, como `steps()` en los videos.
 import * as THREE from './vendor/three.module.js';
+import { createRooms } from './rooms.js';
+import board from './rooms/board.js';
+import monitor from './rooms/monitor.js';
 
 const FPS = 8;         // pasos de animación por segundo
 const VIEW_W = 320;    // la escena está compuesta para 320×200 (1920×1200 / 6)
@@ -508,6 +511,7 @@ function pick(ev) {
 }
 
 addEventListener('pointermove', (ev) => {
+  if (!rooms.onDesk()) return;
   const it = pick(ev);
   if (it) setSelected(it);
   document.body.style.cursor = it ? 'pointer' : 'default';
@@ -515,10 +519,11 @@ addEventListener('pointermove', (ev) => {
   const next = BASE_KX + Math.round((ev.clientX / innerWidth - 0.5) * 6) * 0.03;
   if (next !== kx) { kx = next; setShear(); dirty = true; }
 });
-addEventListener('pointerdown', (ev) => { if (ev.button === 0) launch(pick(ev)); });
+addEventListener('pointerdown', (ev) => { if (ev.button === 0 && rooms.onDesk() && ev.target === canvas) launch(pick(ev)); });
 addEventListener('contextmenu', (ev) => ev.preventDefault());
 
 addEventListener('keydown', (ev) => {
+  if (rooms.handleKey(ev)) return;     // cambio de cuarto, texto en edición o tecla del cuarto
   if (ev.ctrlKey && ev.key.toLowerCase() === 'q') {
     fetch('/api/quit', { method: 'POST', headers: { 'X-Desk-Token': TOKEN } });
     return;
@@ -526,9 +531,11 @@ addEventListener('keydown', (ev) => {
   if (ev.key.toLowerCase() === 't' && !ev.ctrlKey) {
     const next = new URLSearchParams(location.search);
     next.set('theme', THEME === 'light' ? 'dark' : 'light');
+    next.set('room', String(rooms.index + 1));
     location.search = next.toString();
     return;
   }
+  if (!rooms.onDesk()) return;
   const i = order.indexOf(selected);
   if (ev.key === 'ArrowRight') setSelected(order[(i + 1) % order.length]);
   else if (ev.key === 'ArrowLeft') setSelected(order[(i - 1 + order.length) % order.length]);
@@ -551,10 +558,27 @@ function resize() {
   setShear();
   const sx = new Map(items.map((i) => [i, toScreen(worldPos(i.group)).x]));
   order = [...items].sort((a, b) => sx.get(a) - sx.get(b));
-  document.getElementById('hint-direct').textContent = `1-${order.length}`;
+  const direct = document.getElementById('hint-direct');
+  if (direct) direct.textContent = `1-${order.length}`;
   dirty = true;
 }
 addEventListener('resize', resize);
+
+// ── Cuartos ─────────────────────────────────────────────────────────────────
+const rooms = createRooms({
+  desk: {
+    id: 'desk',
+    label: 'ESCRITORIO',
+    hints: [['← →', 'MOVER'], ['ENTER', 'ABRIR'], ['1-9', 'DIRECTO', 'hint-direct']],
+  },
+  modules: [board, monitor],
+  ctxBase: {
+    C,
+    theme: THEME,
+    api: (path, init = {}) => fetch(path, { ...init, headers: { ...(init.headers || {}), 'X-Desk-Token': TOKEN } }),
+  },
+  onChange: () => { dirty = true; document.body.style.cursor = 'default'; },
+});
 
 // ── HUD ─────────────────────────────────────────────────────────────────────
 const dateEl = document.getElementById('date');
@@ -581,8 +605,9 @@ function frame(ts) {
       dirty = true;
     }
     updateDate(now);
+    rooms.step(step, now);
   }
-  if (dirty) {
+  if (dirty && rooms.deskVisible()) {
     dirty = false;
     renderer.render(scene, camera);
     updateOverlay();
@@ -599,6 +624,7 @@ async function start() {
   }
   resize();
   setSelected(order.find((i) => i.id === 'terminal') || order[0]);
+  rooms.start((parseInt(params.get('room'), 10) || 1) - 1);
   requestAnimationFrame(frame);
 }
 start();

@@ -21,6 +21,50 @@ html, body {
   -webkit-user-select: none;
 }
 
+/* ── Cuartos ─────────────────────────────────────────────────────────────── */
+.room {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--ground);
+}
+.room[hidden] { display: none; }
+
+/* Zona útil de un cuarto: entre el HUD de arriba y el de abajo. */
+.room-body {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 66px;
+  bottom: 54px;
+  color: var(--ink);
+}
+body.desktop .room-body { bottom: 96px; }   /* deja sitio al panel de LXQt */
+
+/* Panel genérico con borde escalonado 8-bit (a escala --u). */
+.px-panel {
+  background: var(--panel);
+  box-shadow:
+    0 calc(var(--u) * -1) 0 0 var(--line),
+    0 var(--u) 0 0 var(--line),
+    calc(var(--u) * -1) 0 0 0 var(--line),
+    var(--u) 0 0 0 var(--line);
+}
+.px-panel.accent {
+  box-shadow:
+    0 calc(var(--u) * -1) 0 0 var(--accent),
+    0 var(--u) 0 0 var(--accent),
+    calc(var(--u) * -1) 0 0 0 var(--accent),
+    var(--u) 0 0 0 var(--accent);
+}
+.px-title {
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+
 #scene {
   position: absolute;
   left: 0;
@@ -97,11 +141,25 @@ html, body {
   font-size: 15px;
   letter-spacing: 0.18em;
 }
-.hud-top { top: 18px; justify-content: space-between; }
+.hud-top { top: 18px; justify-content: space-between; z-index: 10; }
+
+.hud-rooms { display: flex; gap: 6px; pointer-events: auto; }
+.hud-rooms button {
+  font: inherit;
+  letter-spacing: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.hud-rooms button:hover { color: var(--ink); background: var(--panel-2); }
+.hud-rooms button.on { color: var(--ground); background: var(--accent); }
 .hud-brand { color: var(--accent); }
 .hud-date { font-family: var(--font-term); font-weight: 400; font-size: 27px; letter-spacing: 0.06em; color: var(--ink); }
 
-.hud-bottom { bottom: 18px; gap: 36px; color: var(--muted); font-size: 15px; }
+.hud-bottom { z-index: 10; bottom: 18px; gap: 36px; color: var(--muted); font-size: 15px; }
 .hud-bottom b { color: var(--ink); font-weight: 700; }
 /* En modo escritorio el panel de LXQt suele tapar el borde inferior. */
 body.desktop .hud-bottom { bottom: 60px; }

@@ -8,27 +8,24 @@
   <link rel="stylesheet" href="desk.css">
 </head>
 <body>
-  <canvas id="scene"></canvas>
+  <section class="room" id="room-desk">
+    <canvas id="scene"></canvas>
 
-  <div id="label" hidden>
-    <div class="label-box">
-      <div class="label-title"></div>
-      <div class="label-hint"></div>
+    <div id="label" hidden>
+      <div class="label-box">
+        <div class="label-title"></div>
+        <div class="label-hint"></div>
+      </div>
+      <div class="label-arrow"><i></i><i></i><i></i></div>
     </div>
-    <div class="label-arrow"><i></i><i></i><i></i></div>
-  </div>
+  </section>
 
   <header class="hud hud-top">
     <span class="hud-brand">@XELAND314 · PIXEL DESK</span>
+    <nav class="hud-rooms" id="rooms-nav"></nav>
     <span class="hud-date" id="date"></span>
   </header>
-  <footer class="hud hud-bottom">
-    <span><b>← →</b> MOVER</span>
-    <span><b>ENTER</b> ABRIR</span>
-    <span><b id="hint-direct">1-9</b> DIRECTO</span>
-    <span><b>T</b> TEMA</span>
-    <span id="hint-quit"><b>CTRL+Q</b> SALIR</span>
-  </footer>
+  <footer class="hud hud-bottom" id="hints"></footer>
 
   <script type="module" src="desk.js"></script>
 </body>

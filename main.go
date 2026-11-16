@@ -153,6 +153,39 @@ func init() {
 	runtime.LockOSThread()
 }
 
+// Rutas que añaden los cuartos (board.go, sysinfo.go…) desde su init().
+// Toda ruta bajo /api/ debe envolverse con authed.
+type routeFunc func(mux *http.ServeMux, authed func(http.HandlerFunc) http.HandlerFunc)
+
+var extraRoutes []routeFunc
+
+// dataDir devuelve (y crea) $XDG_DATA_HOME/pixel-desk para datos persistentes.
+func dataDir() string {
+	base := os.Getenv("XDG_DATA_HOME")
+	if base == "" {
+		home, _ := os.UserHomeDir()
+		base = filepath.Join(home, ".local", "share")
+	}
+	dir := filepath.Join(base, "pixel-desk")
+	os.MkdirAll(dir, 0o755)
+	return dir
+}
+
+// writeFileAtomic escribe en un temporal y lo renombra: nunca deja el
+// archivo a medias si el proceso muere.
+func writeFileAtomic(path string, data []byte) error {
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
+}
+
+func sendJSON(w http.ResponseWriter, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(v)
+}
+
 func expand(p string) string {
 	if p == "~" || strings.HasPrefix(p, "~/") {
 		if home, err := os.UserHomeDir(); err == nil {
@@ -206,6 +239,7 @@ func main() {
 	software := flag.Bool("software", false, "desactivar aceleración por GPU")
 	theme := flag.String("theme", "dark", "tema de la escena: dark o light")
 	px := flag.Int("px", 3, "tamaño de un píxel de escena en pantalla (6 = grueso, 3 = fino, 2 = muy fino)")
+	room := flag.Int("room", 1, "cuarto inicial (1 escritorio, 2 tablero, 3 monitor)")
 	shot := flag.String("shot", "", "guardar una captura PNG y salir")
 	shotMs := flag.Int("shot-ms", 2500, "espera antes de la captura (ms)")
 	flag.Parse()
@@ -286,6 +320,9 @@ func main() {
 		w.WriteHeader(http.StatusNoContent)
 		C.pd_request_quit()
 	}))
+	for _, add := range extraRoutes {
+		add(mux, authed)
+	}
 
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -294,7 +331,7 @@ func main() {
 	go func() { log.Fatal(http.Serve(ln, mux)) }()
 
 	url := fmt.Sprintf("http://127.0.0.1:%d/?t=%s", ln.Addr().(*net.TCPAddr).Port, token)
-	url += fmt.Sprintf("&px=%d&theme=%s", *px, *theme)
+	url += fmt.Sprintf("&px=%d&theme=%s&room=%d", *px, *theme, *room)
 	if *desktop {
 		url += "&desktop=1"
 	}
