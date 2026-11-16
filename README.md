@@ -3,7 +3,9 @@
 # 🐈 pixel-desk
 
 **Un escritorio pixel-art 2.5D para Linux (X11).**<br>
-Tu fondo de escritorio es una habitación: cada objeto de la mesa abre una app.
+Tu fondo de escritorio es una casa de cinco cuartos: un escritorio donde cada
+objeto abre una app o una herramienta, un tablero de corcho, un monitor del
+sistema, un calendario y un rack de servidores.
 
 ![X11](https://img.shields.io/badge/X11-LXQt%20%2B%20xfwm4-f1a449?style=flat-square&labelColor=0b0b0b)
 ![Go](https://img.shields.io/badge/Go-WebKitGTK-f1a449?style=flat-square&labelColor=0b0b0b&logo=go&logoColor=f9e6c6)
@@ -13,6 +15,8 @@ Tu fondo de escritorio es una habitación: cada objeto de la mesa abre una app.
 <img src="docs/img/escena-oscura.png" alt="La escena de pixel-desk en modo oscuro: una mesa con un monitor CRT, libros, un gato naranja con un portátil, un tocadiscos y un caballete" width="100%">
 
 </div>
+
+<img src="docs/img/cuartos-tira.png" alt="Los cinco cuartos en miniatura: escritorio, tablero, monitor, calendario y rack" width="100%">
 
 ---
 
@@ -41,7 +45,7 @@ portátil, mueve la cola y parpadea, todo a 8 pasos por segundo.
 </table>
 
 ### Claro y oscuro
-`T` alterna en vivo. El modo claro usa la paleta de los carruseles de
+`T` alterna en vivo, en cualquier cuarto. El modo claro usa la paleta de los carruseles de
 cover-creator-cli: blanco, tinta azul noche y naranja `#f97316`.
 
 <img src="docs/img/claro-oscuro.png" alt="La misma escena en modo oscuro y en modo claro, lado a lado" width="100%">
@@ -61,6 +65,55 @@ color que la escena.
 
 ---
 
+## 🏠 Los cuartos
+
+`Tab` / `Shift+Tab` o las pestañas de arriba cambian de cuarto. Cada uno solo
+trabaja (consulta el sistema, la red o el disco) mientras lo estás mirando.
+
+### 2 · Tablero de corcho
+Kanban de tres columnas (por hacer, en progreso, hecho) y una pizarra de
+**información fija**. Notas de papel con chincheta: arrastrar y soltar, doble
+clic para editar, o todo con teclado (`N` nueva, `Enter` editar, `Shift+← →`
+mover, `C` color, `Supr` dos veces para borrar).
+
+<img src="docs/img/cuarto-tablero.png" alt="Tablero de corcho con notas en columnas Por hacer, En progreso, Hecho e Info fija" width="100%">
+
+### 3 · Monitor del sistema
+Pared de pantallas estilo terminal: CPU por núcleo, memoria y swap, procesos
+tipo htop (`S` ordena por CPU o memoria), red, discos, sistema (temperatura,
+batería, carga) y paneles que consultan una **API**. Se configura en
+[`config/monitor.json`](config/monitor.json). Lee `/proc` y `/sys` directamente,
+sin ejecutar comandos.
+
+<img src="docs/img/cuarto-monitor.png" alt="Monitor con pantallas verdes de CPU, memoria, procesos, red, disco, sistema y API" width="100%">
+
+### 4 · Calendario
+Mes completo (semana desde el lunes, número de semana ISO), agenda del día,
+próximos 7 días, fase lunar y un gato que parpadea. Eventos con hora o de día
+completo, repetición semanal, mensual o anual, y **suscripciones ICS** de solo
+lectura (por ejemplo, el enlace privado de Google Calendar) en
+`~/.config/pixel-desk/calendar.json`.
+
+<img src="docs/img/cuarto-calendario.png" alt="Calendario de noviembre con eventos de colores y panel de agenda" width="100%">
+
+### 5 · Rack de servidores
+Cada nodo es una unidad de rack con LEDs: TCP, HTTP, días restantes del
+certificado TLS, ping, DNS y contenedores Docker. `Enter` copia el `ssh` del
+nodo, `R` comprueba ahora, `F` deja solo los que fallan. La lista va en
+`~/.config/pixel-desk/rack.json` (se recarga sola); el ejemplo incluido solo
+comprueba tu propia máquina y example.com.
+
+<img src="docs/img/cuarto-rack.png" alt="Rack con nodos y LEDs verdes, naranjas y rojos, y panel de detalle" width="100%">
+
+<details>
+<summary><b>Ver los cuartos en modo claro</b></summary>
+
+<img src="docs/img/cuartos-claro.png" alt="Los cuartos en modo claro" width="100%">
+
+</details>
+
+---
+
 ## 🎛️ Los objetos
 
 | | Objeto | Abre |
@@ -69,16 +122,33 @@ color que la escena.
 | 🖥️ | Monitor CRT con reloj | terminal (`qterminal`) |
 | 📚 | Pila de libros (colores del resaltado de sintaxis) | VS Code |
 | 🐈 | El gato con su portátil | lanzador (`rofi -show drun`) |
-| 💿 | Tocadiscos | Spotify, en su escritorio virtual (el 8) |
+| 💿 | Tocadiscos | Spotify en su escritorio virtual (el 8). Seleccionado: `Espacio` pausa, `,` `.` cambian de pista y la etiqueta muestra qué suena |
 | 🪟 | Ventana en la pared | navegador (Brave) |
-| 🖼️ | Caballete | `slides.c`, el presentador en C |
-| 🧰 | Cajón de arriba | ajustes de LXQt |
+| 🖼️ | Caballete | **bitácora rápida** (panel) |
+| 🧰 | Cajón de arriba | **bóveda de comandos** (panel) |
 | 🔑 | Cajón de abajo | apagar / cerrar sesión |
 
-Todo se configura en [`config/apps.json`](config/apps.json). La página solo
-envía un `id`; el binario ejecuta únicamente lo que está en esa lista.
+Todo se configura en [`config/apps.json`](config/apps.json): un objeto lanza un
+programa (`cmd`) o abre un panel (`panel`). La página solo envía un `id`; el
+binario ejecuta únicamente lo que está en esa lista.
 
-**Controles:** ratón · `← →` mover · `Enter` abrir · `1-9` directo · `T` tema · `Ctrl+Q` salir
+### Bóveda de comandos (cajón)
+Escribe para filtrar tus comandos frecuentes; `Enter` copia el elegido al
+portapapeles y cierra. **Nunca ejecuta nada.** Admite huecos `{{host}}` que se
+rellenan antes de copiar. Los comandos viven en
+`~/.local/share/pixel-desk/snippets.json` (se crea con ejemplos genéricos).
+
+<img src="docs/img/panel-comandos.png" alt="Panel de la bóveda de comandos con una búsqueda y la lista filtrada" width="100%">
+
+### Bitácora rápida (caballete)
+Para las interrupciones del día: `Enter` anota con la hora puesta, `#etiqueta`
+o `Alt+1-4` clasifican (incidencia, cambio, consulta, nota), `↑` corrige la
+última y `Ctrl+E` exporta la semana a Markdown (y lo copia). El archivo
+`bitacora.jsonl` es de solo añadir: nunca se reescribe.
+
+<img src="docs/img/panel-bitacora.png" alt="Panel de bitácora con entradas del día etiquetadas" width="100%">
+
+**Controles:** ratón · `← →` mover · `Enter` abrir · `1-9` directo · `Tab` cuarto · `T` tema · `Ctrl+Q` salir
 
 ---
 
@@ -98,6 +168,7 @@ npm run stop       # cerrarlo
 |---|---|
 | `-desktop` | ventana `_NET_WM_WINDOW_TYPE_DESKTOP`: detrás de todo, a pantalla completa |
 | `-theme light` | arranca en modo claro (por defecto `dark`) |
+| `-room N` | arranca en otro cuarto: 1 escritorio, 2 tablero, 3 monitor, 4 calendario, 5 rack |
 | `-px N` | tamaño del píxel: `3` por defecto (640×400 en 1920×1200), `6` grueso, `2` fino |
 | `-software` | sin aceleración por GPU |
 | `-shot f.png` | guarda una captura y sale |
@@ -193,14 +264,40 @@ Convierte las apps instaladas, los tipos de archivo y los dispositivos
   librería de runtime, así que no hace falta el paquete `-dev`.
 - **Seguro por defecto:** el servidor escucha solo en `127.0.0.1`, la API exige
   un token nuevo en cada arranque, y la página no puede pedir comandos, solo ids.
+  Las URLs de APIs, calendarios y servidores viven en el backend y nunca llegan
+  a la página; todo texto ajeno se pinta como texto, nunca como HTML.
+- **Cuartos y paneles como módulos:** cada cuarto es un archivo de
+  `web/rooms/` y cada herramienta de un objeto, uno de `web/panels/`, con un
+  contrato de pocas funciones (documentado en `web/rooms.js` y `web/panels.js`).
+
+### Dónde se guardan las cosas
+
+| Archivo | Qué es |
+|---|---|
+| `~/.local/share/pixel-desk/board.json` | notas del tablero |
+| `~/.local/share/pixel-desk/calendar.json` | eventos del calendario |
+| `~/.local/share/pixel-desk/snippets.json` | comandos de la bóveda (se edita a mano) |
+| `~/.local/share/pixel-desk/bitacora.jsonl` | bitácora (solo añadir) y `reportes/` con los Markdown |
+| `~/.config/pixel-desk/rack.json` | servidores del rack (lo escribes tú) |
+| `~/.config/pixel-desk/calendar.json` | suscripciones ICS |
+| `config/monitor.json` | pantallas del monitor |
+
+Se escriben de forma atómica, y si un archivo aparece corrupto se aparta como
+`*.corrupto-<fecha>` en vez de perderse.
 
 <details>
 <summary><b>Estructura del proyecto</b></summary>
 
 ```
-main.go             servidor local + ventana GTK/WebKit + lanzador
-config/apps.json    apps lanzables
+main.go             servidor local + ventana GTK/WebKit + lanzador + portapapeles
+board.go            API del tablero          calendar.go   API del calendario + ICS
+sysinfo.go          monitor (/proc, /sys)    rack.go       comprobaciones del rack
+snippets.go         bóveda de comandos       bitacora.go   bitácora y exportación
+mpris.go            tocadiscos ↔ reproductor por D-Bus
+config/             apps.json, monitor.json, rack.json y calendar.json de ejemplo
 web/desk.js         la escena (habitación, objetos, gato, selección, entrada)
+web/rooms.js        gestor de cuartos        web/rooms/    tablero, monitor, calendario, rack
+web/panels.js       paneles modales          web/panels/   bóveda de comandos y bitácora
 web/desk.css        HUD y etiquetas
 web/assets/styles/  tokens.css (copia de social-media/shared) y light.css
 web/assets/fonts/   Press Start 2P, Silkscreen, VT323 (OFL)
