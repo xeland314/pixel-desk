@@ -8,6 +8,7 @@ import * as THREE from './vendor/three.module.js';
 import { createRooms } from './rooms.js';
 import board from './rooms/board.js';
 import monitor from './rooms/monitor.js';
+import calendar from './rooms/calendar.js';
 
 const FPS = 8;         // pasos de animación por segundo
 const VIEW_W = 320;    // la escena está compuesta para 320×200 (1920×1200 / 6)
@@ -571,7 +572,7 @@ const rooms = createRooms({
     label: 'ESCRITORIO',
     hints: [['← →', 'MOVER'], ['ENTER', 'ABRIR'], ['1-9', 'DIRECTO', 'hint-direct']],
   },
-  modules: [board, monitor],
+  modules: [board, monitor, calendar],
   ctxBase: {
     C,
     theme: THEME,
