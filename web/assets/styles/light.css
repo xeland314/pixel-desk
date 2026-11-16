@@ -1,0 +1,34 @@
+/* Modo claro de pixel-desk. Paleta de los carruseles de cover-creator-cli
+   (tema "light" con acento naranja): fondo blanco, tinta azul noche.
+   Las variables --light-* las lee también theme/theme.py --light. */
+:root {
+  --light-ground: #ffffff;
+  --light-panel: #f6f6f6;
+  --light-panel-2: #ececec;
+  --light-line: #d4d4d4;
+  --light-ink: #0f172b;
+  --light-muted: #8c8c8c;
+  --light-accent: #f97316;
+  --light-accent-deep: #893f0c;
+  --light-on-accent: #0f172b;
+}
+
+/* Pantallas y vinilos: son objetos, no superficies del tema. Se quedan
+   oscuros en los dos modos para que el texto verde se lea. */
+:root {
+  --screen: #0b0b0b;
+  --screen-2: #161616;
+}
+
+/* Al activar el modo claro se reasignan los tokens que usa la escena. Los
+   colores del gato y los semánticos no cambian. */
+:root[data-theme="light"] {
+  --ground: var(--light-ground);
+  --panel: var(--light-panel);
+  --panel-2: var(--light-panel-2);
+  --line: var(--light-line);
+  --ink: var(--light-ink);
+  --muted: var(--light-muted);
+  --accent: var(--light-accent);
+  --accent-dim: rgba(249, 115, 22, 0.18);
+}
