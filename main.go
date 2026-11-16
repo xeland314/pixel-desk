@@ -260,7 +260,7 @@ func main() {
 	software := flag.Bool("software", false, "desactivar aceleración por GPU")
 	theme := flag.String("theme", "dark", "tema de la escena: dark o light")
 	px := flag.Int("px", 3, "tamaño de un píxel de escena en pantalla (6 = grueso, 3 = fino, 2 = muy fino)")
-	room := flag.Int("room", 1, "cuarto inicial (1 escritorio, 2 tablero, 3 monitor)")
+	room := flag.Int("room", 1, "cuarto inicial (1 escritorio, 2 tablero, 3 monitor, 4 calendario)")
 	shot := flag.String("shot", "", "guardar una captura PNG y salir")
 	shotMs := flag.Int("shot-ms", 2500, "espera antes de la captura (ms)")
 	flag.Parse()

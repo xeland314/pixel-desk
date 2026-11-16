@@ -8,6 +8,7 @@ import * as THREE from './vendor/three.module.js';
 import { createRooms } from './rooms.js';
 import board from './rooms/board.js';
 import monitor from './rooms/monitor.js';
+import calendar from './rooms/calendar.js';
 import { createPanels } from './panels.js';
 import snippetsPanel from './panels/snippets.js';
 import logPanel from './panels/log.js';
@@ -621,7 +622,7 @@ const rooms = createRooms({
     label: 'ESCRITORIO',
     hints: [['← →', 'MOVER'], ['ENTER', 'ABRIR'], ['1-9', 'DIRECTO', 'hint-direct'], ['ESPACIO , .', 'MÚSICA']],
   },
-  modules: [board, monitor],
+  modules: [board, monitor, calendar],
   ctxBase: {
     C,
     theme: THEME,
