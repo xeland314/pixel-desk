@@ -39,6 +39,59 @@
 .board-status.error::before { background: var(--sem-bad); }
 @keyframes bd-blink { 50% { opacity: 0; } }
 
+/* ── Pestañas de espacios (TRABAJO, PERSONAL…) ──────────────────────────── */
+.board-spaces {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  margin: 0 calc(var(--u) * 6);
+  overflow: hidden;
+}
+.board-space,
+.board-space-name {
+  all: unset;
+  box-sizing: border-box;
+  height: calc(var(--u) * 8);
+  padding: 0 calc(var(--u) * 3);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  background: var(--panel);
+  color: var(--muted);
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 0 0 var(--u) var(--line);
+}
+.board-space b {
+  color: var(--ink);
+  background: var(--panel-2);
+  padding: 0 var(--u);
+  letter-spacing: 0;
+}
+.board-space:hover { color: var(--ink); }
+.board-space.on {
+  background: var(--accent);
+  color: var(--cat-brown);
+  box-shadow: 0 0 0 var(--u) var(--line), var(--u) var(--u) 0 var(--u) var(--line);
+}
+.board-space.on b { background: var(--cat-brown); color: var(--accent); }
+.board-space.armed { background: var(--sem-bad); color: var(--ground); }
+.board-space.add { color: var(--accent); font-size: 16px; }
+.board-space-name {
+  width: calc(var(--u) * 60);
+  cursor: text;
+  color: var(--ink);
+  background: var(--panel-2);
+  box-shadow: 0 0 0 var(--u) var(--accent);
+  text-transform: uppercase;
+}
+
 /* ── Marco de madera y corcho ───────────────────────────────────────────── */
 .board-cork {
   flex: 1;
