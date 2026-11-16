@@ -1,0 +1,16 @@
+# dependencias y lo que genera npm install
+node_modules/
+web/vendor/
+
+# binario compilado
+/pixel-desk
+
+# generado por theme/theme.py y theme/icons.py
+theme/out/
+theme/auto-icons/
+
+# copias de seguridad de la configuración personal (theme.py apply)
+theme/backup/
+
+# caché de Python
+__pycache__/

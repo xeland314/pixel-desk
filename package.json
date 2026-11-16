@@ -1,0 +1,16 @@
+{
+  "name": "pixel-desk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Escritorio pixel-art 2.5D para X11 (three.js + Go/WebKitGTK)",
+  "scripts": {
+    "postinstall": "mkdir -p web/vendor && cp node_modules/three/build/three.module.js node_modules/three/build/three.core.js web/vendor/",
+    "build": "go build -o pixel-desk .",
+    "start": "./pixel-desk -dev",
+    "desktop": "./pixel-desk -desktop",
+    "stop": "pkill -x pixel-desk || true"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  }
+}
