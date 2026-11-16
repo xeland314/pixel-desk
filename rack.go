@@ -15,6 +15,7 @@
 //	   "checks":[
 //	     {"type":"tcp","port":22},
 //	     {"type":"http","url":"https://ejemplo.org/salud","expect_status":200},
+//	     {"type":"http","url":"https://ejemplo.org/api/health","keyword":"\"status\":\"ok\""},
 //	     {"type":"tls","host":"ejemplo.org","port":443},
 //	     {"type":"ping"},
 //	     {"type":"dns","name":"ejemplo.org"},
@@ -85,6 +86,7 @@ type RackCheckCfg struct {
 	Port         int    `json:"port,omitempty"`
 	URL          string `json:"url,omitempty"`
 	ExpectStatus int    `json:"expect_status,omitempty"`
+	Keyword      string `json:"keyword,omitempty"` // http: texto que debe aparecer en la respuesta
 	Host         string `json:"host,omitempty"`
 	Name         string `json:"name,omitempty"`
 	Container    string `json:"container,omitempty"`
@@ -525,7 +527,7 @@ func runRackCheck(n RackNodeCfg, c RackCheckCfg) rackResult {
 		}
 		return checkTLS(host, p)
 	case "http":
-		return checkHTTP(c.URL, c.ExpectStatus)
+		return checkHTTP(c.URL, c.ExpectStatus, c.Keyword)
 	case "ping":
 		return checkPing(host)
 	case "dns":
@@ -552,7 +554,7 @@ func checkTCP(host string, port int) rackResult {
 	return rackResult{Level: slowLevel(ms, rackSlowFast), MS: ms}
 }
 
-func checkHTTP(raw string, expect int) rackResult {
+func checkHTTP(raw string, expect int, keyword string) rackResult {
 	u, err := url.Parse(raw)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
 		return bad("url inválida")
@@ -571,7 +573,7 @@ func checkHTTP(raw string, expect int) rackResult {
 		return rackResult{Level: "bad", MS: time.Since(start).Milliseconds(), Err: cleanErr(err)}
 	}
 	defer resp.Body.Close()
-	io.Copy(io.Discard, io.LimitReader(resp.Body, rackMaxBody))
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, rackMaxBody))
 	ms := time.Since(start).Milliseconds()
 	okStatus := resp.StatusCode == expect
 	if expect == 0 {
@@ -579,6 +581,10 @@ func checkHTTP(raw string, expect int) rackResult {
 	}
 	if !okStatus {
 		return rackResult{Level: "bad", MS: ms, Err: "estado HTTP " + strconv.Itoa(resp.StatusCode)}
+	}
+	// El error no repite la palabra clave ni el cuerpo: solo que falta.
+	if keyword != "" && !strings.Contains(string(body), keyword) {
+		return rackResult{Level: "bad", MS: ms, Err: "falta la palabra clave"}
 	}
 	return rackResult{Level: slowLevel(ms, rackSlowSlow), MS: ms}
 }

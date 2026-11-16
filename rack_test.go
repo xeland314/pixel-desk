@@ -81,7 +81,7 @@ func TestCleanErr(t *testing.T) {
 	if got := cleanErr(err); got != "conexión rechazada" {
 		t.Fatalf("cleanErr = %q (%v)", got, err)
 	}
-	r := checkHTTP("http://127.0.0.1:1/x?token=secreto", 200)
+	r := checkHTTP("http://127.0.0.1:1/x?token=secreto", 200, "")
 	if r.Level != "bad" || strings.Contains(r.Err, "secreto") || strings.Contains(r.Err, "127.0.0.1") {
 		t.Fatalf("error con datos sensibles: %+v", r)
 	}
@@ -153,7 +153,7 @@ func TestCheckTLS(t *testing.T) {
 	}
 
 	// El HTTP con ese certificado también funciona.
-	h := checkHTTP("https://127.0.0.1:"+strconv.Itoa(port)+"/", 200)
+	h := checkHTTP("https://127.0.0.1:"+strconv.Itoa(port)+"/", 200, "")
 	if h.Level != "ok" {
 		t.Fatalf("http tls: %+v", h)
 	}
@@ -168,14 +168,20 @@ func TestCheckHTTPAndTCP(t *testing.T) {
 		w.Write([]byte("ok"))
 	}))
 	defer srv.Close()
-	if r := checkHTTP(srv.URL, 200); r.Level != "ok" {
+	if r := checkHTTP(srv.URL, 200, ""); r.Level != "ok" {
 		t.Fatalf("http ok: %+v", r)
 	}
-	if r := checkHTTP(srv.URL+"/404", 200); r.Level != "bad" || r.Err != "estado HTTP 404" {
+	if r := checkHTTP(srv.URL+"/404", 200, ""); r.Level != "bad" || r.Err != "estado HTTP 404" {
 		t.Fatalf("http 404: %+v", r)
 	}
-	if r := checkHTTP(srv.URL+"/404", 404); r.Level != "ok" {
+	if r := checkHTTP(srv.URL+"/404", 404, ""); r.Level != "ok" {
 		t.Fatalf("expect 404: %+v", r)
+	}
+	if r := checkHTTP(srv.URL, 200, "ok"); r.Level != "ok" {
+		t.Fatalf("keyword presente: %+v", r)
+	}
+	if r := checkHTTP(srv.URL, 200, "secreto"); r.Level != "bad" || strings.Contains(r.Err, "secreto") {
+		t.Fatalf("keyword ausente: %+v", r)
 	}
 	host, port, _ := net.SplitHostPort(srv.Listener.Addr().String())
 	p, _ := net.LookupPort("tcp", port)
