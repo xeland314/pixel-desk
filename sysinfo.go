@@ -1,6 +1,10 @@
 // Cuarto 3: monitor del sistema. Lee /proc y /sys directamente (sin comandos
 // externos) y expone tres rutas: /api/monitor/config, /api/sys y
 // /api/monitor/http. El navegador nunca envía URLs: solo pide por id.
+// Los paneles con "server" muestran otra máquina vía Netdata (netdata.go).
+//
+// Configuración (la primera que exista): $PIXEL_DESK_MONITOR,
+// ~/.config/pixel-desk/monitor.json, ./config/monitor.json, la embebida.
 package main
 
 import (
@@ -53,13 +57,28 @@ type MonPanel struct {
 	Headers  map[string]string `json:"headers,omitempty"`
 	Field    string            `json:"field,omitempty"`
 	Expect   int               `json:"expect_status,omitempty"`
+	Server   string            `json:"server,omitempty"` // id de "servers": otra máquina vía Netdata
 	Nota     string            `json:"_nota,omitempty"`
 }
 
 type MonConfig struct {
-	Columns int        `json:"columns"`
-	Rows    int        `json:"rows"`
-	Panels  []MonPanel `json:"panels"`
+	Columns int                  `json:"columns"`
+	Rows    int                  `json:"rows"`
+	Servers map[string]MonServer `json:"servers,omitempty"`
+	Panels  []MonPanel           `json:"panels"`
+}
+
+func monitorConfigPaths() []string {
+	var paths []string
+	if p := os.Getenv("PIXEL_DESK_MONITOR"); p != "" {
+		paths = append(paths, p)
+	}
+	if cfg := os.Getenv("XDG_CONFIG_HOME"); cfg != "" {
+		paths = append(paths, filepath.Join(cfg, "pixel-desk", "monitor.json"))
+	} else if home, err := os.UserHomeDir(); err == nil {
+		paths = append(paths, filepath.Join(home, ".config", "pixel-desk", "monitor.json"))
+	}
+	return append(paths, filepath.Join("config", "monitor.json"))
 }
 
 var (
@@ -70,8 +89,11 @@ var (
 func monConfig() *MonConfig {
 	monCfgOnce.Do(func() {
 		data, src := defaultMonitor, "embebida"
-		if b, err := os.ReadFile("config/monitor.json"); err == nil {
-			data, src = b, "config/monitor.json"
+		for _, p := range monitorConfigPaths() {
+			if b, err := os.ReadFile(p); err == nil {
+				data, src = b, p
+				break
+			}
 		}
 		if err := json.Unmarshal(data, &monCfg); err != nil {
 			log.Printf("monitor: config inválida (%s): %v; uso la embebida", src, err)
@@ -84,8 +106,21 @@ func monConfig() *MonConfig {
 		if monCfg.Rows < 1 {
 			monCfg.Rows = 3
 		}
+		for id, sv := range monCfg.Servers {
+			if !validNetdataURL(sv.Netdata) {
+				log.Printf("monitor: servidor %q sin URL de netdata válida; se ignora", id)
+				delete(monCfg.Servers, id)
+			}
+		}
 		for i := range monCfg.Panels {
 			p := &monCfg.Panels[i]
+			if p.Server != "" && p.Type != "http" {
+				if _, ok := monCfg.Servers[p.Server]; !ok {
+					log.Printf("monitor: el panel %q usa el servidor desconocido %q", p.ID, p.Server)
+				}
+			} else {
+				p.Server = ""
+			}
 			if p.Span[0] < 1 {
 				p.Span[0] = 1
 			}
@@ -106,6 +141,9 @@ func monConfig() *MonConfig {
 // publicPanel quita lo que no debe llegar al navegador (url, cabeceras).
 func publicPanel(p MonPanel) map[string]any {
 	m := map[string]any{"id": p.ID, "type": p.Type, "title": p.Title, "span": p.Span}
+	if p.Server != "" {
+		m["server"] = p.Server
+	}
 	if p.N > 0 {
 		m["n"] = p.N
 	}
@@ -160,30 +198,31 @@ type Battery struct {
 }
 
 type Snapshot struct {
-	T        int64          `json:"t"`
-	Host     string         `json:"host"`
-	Kernel   string         `json:"kernel"`
-	Model    string         `json:"model"`
-	Cores    int            `json:"cores"`
-	Uptime   float64        `json:"uptime"`
-	Load     [3]float64     `json:"load"`
-	CPU      float64        `json:"cpu"` // 0..100
-	CPUCores []float64      `json:"cpu_cores"`
-	MemTotal uint64         `json:"mem_total"`
-	MemUsed  uint64         `json:"mem_used"`
-	MemCache uint64         `json:"mem_cache"`
-	SwapTot  uint64         `json:"swap_total"`
-	SwapUsed uint64         `json:"swap_used"`
-	Net      []NetIf        `json:"net"`
-	NetMain  string         `json:"net_main"`
-	Disks    []DiskInfo     `json:"disks"`
-	Temp     *float64       `json:"temp,omitempty"`
-	Battery  *Battery       `json:"battery,omitempty"`
-	NProcs   int            `json:"nprocs"`
-	ProcsCPU []ProcInfo     `json:"procs_cpu"`
-	ProcsMem []ProcInfo     `json:"procs_mem"`
-	Hist     map[string]any `json:"hist"`
-	Stale    bool           `json:"stale,omitempty"`
+	T         int64          `json:"t"`
+	Host      string         `json:"host"`
+	Kernel    string         `json:"kernel"`
+	Model     string         `json:"model"`
+	Cores     int            `json:"cores"`
+	Uptime    float64        `json:"uptime"`
+	Load      [3]float64     `json:"load"`
+	CPU       float64        `json:"cpu"` // 0..100
+	CPUCores  []float64      `json:"cpu_cores"`
+	MemTotal  uint64         `json:"mem_total"`
+	MemUsed   uint64         `json:"mem_used"`
+	MemCache  uint64         `json:"mem_cache"`
+	SwapTot   uint64         `json:"swap_total"`
+	SwapUsed  uint64         `json:"swap_used"`
+	Net       []NetIf        `json:"net"`
+	NetMain   string         `json:"net_main"`
+	Disks     []DiskInfo     `json:"disks"`
+	Temp      *float64       `json:"temp,omitempty"`
+	Battery   *Battery       `json:"battery,omitempty"`
+	NProcs    int            `json:"nprocs"`
+	ProcsCPU  []ProcInfo     `json:"procs_cpu"`
+	ProcsMem  []ProcInfo     `json:"procs_mem"`
+	ProcsKind string         `json:"procs_kind,omitempty"` // "" = procesos; "CONTENEDORES" en remotos
+	Hist      map[string]any `json:"hist"`
+	Stale     bool           `json:"stale,omitempty"`
 }
 
 type sampler struct {
@@ -689,7 +728,22 @@ func init() {
 		}))
 		mux.HandleFunc("/api/sys", authed(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Cache-Control", "no-store")
-			sendJSON(w, mon.snapshot())
+			id := r.URL.Query().Get("server")
+			if id == "" {
+				sendJSON(w, mon.snapshot())
+				return
+			}
+			sv, ok := monConfig().Servers[id]
+			if !ok {
+				http.Error(w, "servidor desconocido", http.StatusNotFound)
+				return
+			}
+			snap, err := ndHostFor(id, sv).snapshot()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadGateway)
+				return
+			}
+			sendJSON(w, snap)
 		}))
 		mux.HandleFunc("/api/monitor/http", authed(func(w http.ResponseWriter, r *http.Request) {
 			id := r.URL.Query().Get("id")

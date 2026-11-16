@@ -2,6 +2,7 @@
 //
 // Backend: /api/monitor/config, /api/sys (cada 1 s, solo con el cuarto
 // activo) y /api/monitor/http?id=… (el navegador nunca envía URLs).
+// Un panel con "server" lee /api/sys?server=<id>: otra máquina vía Netdata.
 // Todo se dibuja a saltos: barras de celdas y sparklines en <canvas> pequeños
 // escalados con image-rendering: pixelated.
 
@@ -239,14 +240,17 @@ const TYPES = {
         rows.forEach((c, i) => {
           const p = list[i];
           if (!p) { c.forEach((x) => { x.textContent = ''; }); return; }
-          c[0].textContent = p.pid;
+          c[0].textContent = p.pid || '';
           c[1].textContent = p.name;
           c[2].textContent = p.cpu.toFixed(1);
           c[3].textContent = p.mem.toFixed(1);
           c[2].className = p.cpu >= 80 ? 'c-bad' : p.cpu >= 30 ? 'c-acc' : '';
           c[3].className = p.mem >= 20 ? 'c-bad' : p.mem >= 8 ? 'c-acc' : '';
         });
-        foot.textContent = `${d.nprocs} PROCESOS  ORDEN ${byMem ? 'MEM' : 'CPU'} (S)  100% = 1 NUCLEO`;
+        ths[0].textContent = d.procs_kind ? '' : 'PID';
+        foot.textContent = d.procs_kind
+          ? `${list.length} ${d.procs_kind}  ORDEN ${byMem ? 'MEM' : 'CPU'} (S)  100% = 1 NUCLEO`
+          : `${d.nprocs} PROCESOS  ORDEN ${byMem ? 'MEM' : 'CPU'} (S)  100% = 1 NUCLEO`;
         env.led('ok');
       },
       redraw() { if (last) api.update(last); },
@@ -283,8 +287,8 @@ const TYPES = {
         const max = Math.max(1024, ...h.rx, ...h.tx);
         rx.big.textContent = fmtRate(it.rx);
         tx.big.textContent = fmtRate(it.tx);
-        rx.tot.textContent = `TOTAL ${fmtBytes(it.rx_total)}`;
-        tx.tot.textContent = `TOTAL ${fmtBytes(it.tx_total)}`;
+        rx.tot.textContent = it.rx_total ? `TOTAL ${fmtBytes(it.rx_total)}` : '';
+        tx.tot.textContent = it.tx_total ? `TOTAL ${fmtBytes(it.tx_total)}` : '';
         rx.sp.set(h.rx, max);
         tx.sp.set(h.tx, max);
         env.led('ok');
@@ -397,9 +401,9 @@ export default {
     let active = false;
     let paused = false;
     let inflight = false;
-    let fails = 0;
     let timer = null;
-    let snap = null;
+    const snaps = new Map();   // server ('' = esta máquina) → última muestra
+    const fails = new Map();   // server → fallos seguidos
     const httpTimers = new Map();
     const msg = el('div', 'mon-msg');
     msg.hidden = true;
@@ -447,11 +451,17 @@ export default {
 
     // ── sondeo ───────────────────────────────────────────────────────────
     function render() {
-      if (!snap) return;
       readColors(root);
       for (const p of panels) {
-        if (p.impl.update) {
-          p.impl.update(snap);
+        if (!p.impl.update) continue;
+        const srv = p.cfg.server || '';
+        const d = snaps.get(srv);
+        if ((fails.get(srv) || 0) >= 2) {
+          p.env.led('bad');
+          if (srv) p.metaText = 'SIN SEÑAL';
+        } else if (d) {
+          if (p.metaText === 'SIN SEÑAL') p.metaText = '';
+          p.impl.update(d);
           p.flash = 1;
         }
       }
@@ -464,22 +474,27 @@ export default {
       msg.textContent = text || '';
     }
 
+    async function fetchSys(srv) {
+      try {
+        const r = await ctx.api(srv ? `/api/sys?server=${encodeURIComponent(srv)}` : '/api/sys');
+        if (!r.ok) throw new Error(r.status);
+        snaps.set(srv, await r.json());
+        fails.set(srv, 0);
+      } catch (e) {
+        fails.set(srv, (fails.get(srv) || 0) + 1);
+        if (fails.get(srv) >= 2) snaps.delete(srv);
+      }
+    }
     async function poll() {
       clearTimeout(timer);
       if (!active || paused || inflight) { schedule(); return; }
       inflight = true;
       try {
-        const r = await ctx.api('/api/sys');
-        if (!r.ok) throw new Error(r.status);
-        snap = await r.json();
-        fails = 0;
-        showMsg('');
+        const servers = new Set(panels.filter((p) => p.impl.update).map((p) => p.cfg.server || ''));
+        await Promise.all([...servers].map(fetchSys));
+        // El aviso grande solo cuando falla esta máquina (el backend local).
+        showMsg(servers.has('') && (fails.get('') || 0) >= 2 ? 'SIN SENAL' : '');
         render();
-      } catch (e) {
-        if (++fails >= 2) {
-          showMsg('SIN SENAL');
-          for (const p of panels) p.env.led('bad');
-        }
       } finally {
         inflight = false;
       }
