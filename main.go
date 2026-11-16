@@ -62,6 +62,18 @@ static gboolean pd_quit(gpointer data) {
 // Pide salir desde cualquier hilo (lo usa el servidor HTTP).
 static void pd_request_quit(void) { g_idle_add(pd_quit, NULL); }
 
+// Portapapeles: GTK solo se toca desde el hilo principal, así que el texto
+// viaja en un g_idle_add. gtk_clipboard_store lo deja al gestor de
+// portapapeles para que sobreviva si pixel-desk se cierra.
+static gboolean pd_copy_idle(gpointer data) {
+  GtkClipboard *cb = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+  gtk_clipboard_set_text(cb, (const char *)data, -1);
+  gtk_clipboard_store(cb);
+  g_free(data);
+  return FALSE;
+}
+static void pd_copy(const char *text) { g_idle_add(pd_copy_idle, g_strdup(text)); }
+
 static void pd_run(const char *url, int desktop, int accel, int w, int h, const char *shot, int shot_ms) {
   gtk_init(NULL, NULL);
 
@@ -146,6 +158,7 @@ type App struct {
 	Hint  string   `json:"hint"`
 	Cmd   []string `json:"cmd"`
 	Cwd   string   `json:"cwd,omitempty"`
+	Panel string   `json:"panel,omitempty"` // abre un panel de web/panels/ en vez de lanzar Cmd
 }
 
 func init() {
@@ -179,6 +192,14 @@ func writeFileAtomic(path string, data []byte) error {
 		return err
 	}
 	return os.Rename(tmp, path)
+}
+
+// copyToClipboard pone texto en el portapapeles del sistema (CLIPBOARD) desde
+// el propio proceso GTK, sin lanzar xclip. Nunca ejecuta nada.
+func copyToClipboard(text string) {
+	ct := C.CString(text)
+	defer C.free(unsafe.Pointer(ct))
+	C.pd_copy(ct)
 }
 
 func sendJSON(w http.ResponseWriter, v any) {
@@ -290,10 +311,11 @@ func main() {
 			ID    string `json:"id"`
 			Label string `json:"label"`
 			Hint  string `json:"hint"`
+			Panel string `json:"panel,omitempty"`
 		}
 		out := make([]pub, 0, len(apps))
 		for _, a := range apps {
-			out = append(out, pub{a.ID, a.Label, a.Hint})
+			out = append(out, pub{a.ID, a.Label, a.Hint, a.Panel})
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(out)

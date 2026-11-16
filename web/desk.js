@@ -8,6 +8,9 @@ import * as THREE from './vendor/three.module.js';
 import { createRooms } from './rooms.js';
 import board from './rooms/board.js';
 import monitor from './rooms/monitor.js';
+import { createPanels } from './panels.js';
+import snippetsPanel from './panels/snippets.js';
+import logPanel from './panels/log.js';
 
 const FPS = 8;         // pasos de animación por segundo
 const VIEW_W = 320;    // la escena está compuesta para 320×200 (1920×1200 / 6)
@@ -482,6 +485,8 @@ function updateOverlay() {
 async function launch(it) {
   if (!it) return;
   setSelected(it);
+  const panel = meta[it.id] && meta[it.id].panel;
+  if (panel) { panels.open(panel); return; }
   busyUntil = performance.now() + 1400;
   labelEl.className = 'busy';
   hintEl.textContent = 'abriendo...';
@@ -511,7 +516,7 @@ function pick(ev) {
 }
 
 addEventListener('pointermove', (ev) => {
-  if (!rooms.onDesk()) return;
+  if (!rooms.onDesk() || panels.isOpen()) return;
   const it = pick(ev);
   if (it) setSelected(it);
   document.body.style.cursor = it ? 'pointer' : 'default';
@@ -519,10 +524,11 @@ addEventListener('pointermove', (ev) => {
   const next = BASE_KX + Math.round((ev.clientX / innerWidth - 0.5) * 6) * 0.03;
   if (next !== kx) { kx = next; setShear(); dirty = true; }
 });
-addEventListener('pointerdown', (ev) => { if (ev.button === 0 && rooms.onDesk() && ev.target === canvas) launch(pick(ev)); });
+addEventListener('pointerdown', (ev) => { if (ev.button === 0 && rooms.onDesk() && !panels.isOpen() && ev.target === canvas) launch(pick(ev)); });
 addEventListener('contextmenu', (ev) => ev.preventDefault());
 
 addEventListener('keydown', (ev) => {
+  if (panels.isOpen()) { panels.key(ev); return; }   // un modal abierto se queda con el teclado
   if (rooms.handleKey(ev)) return;     // cambio de cuarto, texto en edición o tecla del cuarto
   if (ev.ctrlKey && ev.key.toLowerCase() === 'q') {
     fetch('/api/quit', { method: 'POST', headers: { 'X-Desk-Token': TOKEN } });
@@ -578,6 +584,16 @@ const rooms = createRooms({
     api: (path, init = {}) => fetch(path, { ...init, headers: { ...(init.headers || {}), 'X-Desk-Token': TOKEN } }),
   },
   onChange: () => { dirty = true; document.body.style.cursor = 'default'; },
+});
+
+// ── Paneles de los objetos (cajón, caballete…) ──────────────────────────────
+const panels = createPanels({
+  modules: [snippetsPanel, logPanel],
+  ctxBase: {
+    C,
+    theme: THEME,
+    api: (path, init = {}) => fetch(path, { ...init, headers: { ...(init.headers || {}), 'X-Desk-Token': TOKEN } }),
+  },
 });
 
 // ── HUD ─────────────────────────────────────────────────────────────────────
