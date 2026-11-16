@@ -533,6 +533,9 @@ addEventListener('pointermove', (ev) => {
 });
 addEventListener('pointerdown', (ev) => { if (ev.button === 0 && rooms.onDesk() && !panels.isOpen() && ev.target === canvas) launch(pick(ev)); });
 addEventListener('contextmenu', (ev) => ev.preventDefault());
+// El lienzo nunca necesita foco: sin esto, el clic que abre un panel se lleva
+// el foco justo después de que el panel lo pone en su campo de texto.
+canvas.addEventListener('mousedown', (ev) => ev.preventDefault());
 
 addEventListener('keydown', (ev) => {
   if (panels.isOpen()) { panels.key(ev); return; }   // un modal abierto se queda con el teclado
