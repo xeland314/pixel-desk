@@ -76,14 +76,36 @@ Kanban de tres columnas (por hacer, en progreso, hecho) y una pizarra de
 clic para editar, o todo con teclado (`N` nueva, `Enter` editar, `Shift+← →`
 mover, `C` color, `Supr` dos veces para borrar).
 
+Tiene **espacios** separados, como TRABAJO y PERSONAL, cada uno con su propio
+tablero. `W` o `1-9` cambian de espacio y `M` lleva la nota seleccionada al
+siguiente. `Shift+N` crea un espacio, `F2` o doble clic en la pestaña lo
+renombra, y `Shift+Supr` dos veces lo borra si está vacío. Un `board.json`
+antiguo se migra solo: sus notas pasan a TRABAJO y el original queda como
+`board.v1.json`.
+
 <img src="docs/img/cuarto-tablero.png" alt="Tablero de corcho con notas en columnas Por hacer, En progreso, Hecho e Info fija" width="100%">
 
 ### 3 · Monitor del sistema
 Pared de pantallas estilo terminal: CPU por núcleo, memoria y swap, procesos
 tipo htop (`S` ordena por CPU o memoria), red, discos, sistema (temperatura,
 batería, carga) y paneles que consultan una **API**. Se configura en
-[`config/monitor.json`](config/monitor.json). Lee `/proc` y `/sys` directamente,
-sin ejecutar comandos.
+`~/.config/pixel-desk/monitor.json` (si no existe, usa
+[`config/monitor.json`](config/monitor.json)). Lee `/proc` y `/sys`
+directamente, sin ejecutar comandos.
+
+**Otras máquinas:** un panel con `"server"` muestra otro equipo leyendo su
+[Netdata](https://www.netdata.cloud/), sin instalar nada más en él (por
+ejemplo, a través de Tailscale). Allí la tabla de procesos muestra los
+**contenedores**. Se pide como mucho cada 2 s y solo con el cuarto a la vista.
+
+```json
+"servers": { "srv": { "name": "MI SERVIDOR", "netdata": "https://servidor:19999" } },
+"panels": [
+  { "type": "cpu",   "title": "SRV CPU",          "server": "srv" },
+  { "type": "procs", "title": "SRV CONTENEDORES", "server": "srv", "span": [2, 2] },
+  { "type": "disk",  "title": "SRV DISCOS",       "server": "srv", "mounts": ["/", "/mnt/datos"] }
+]
+```
 
 <img src="docs/img/cuarto-monitor.png" alt="Monitor con pantallas verdes de CPU, memoria, procesos, red, disco, sistema y API" width="100%">
 
@@ -98,7 +120,9 @@ lectura (por ejemplo, el enlace privado de Google Calendar) en
 
 ### 5 · Rack de servidores
 Cada nodo es una unidad de rack con LEDs: TCP, HTTP, días restantes del
-certificado TLS, ping, DNS y contenedores Docker. `Enter` copia el `ssh` del
+certificado TLS, ping, DNS y contenedores Docker. Las comprobaciones HTTP
+aceptan `"keyword"`, igual que los monitores de palabra clave de Uptime Kuma.
+`Enter` copia el `ssh` del
 nodo, `R` comprueba ahora, `F` deja solo los que fallan. La lista va en
 `~/.config/pixel-desk/rack.json` (se recarga sola); el ejemplo incluido solo
 comprueba tu propia máquina y example.com.
@@ -280,7 +304,7 @@ Convierte las apps instaladas, los tipos de archivo y los dispositivos
 | `~/.local/share/pixel-desk/bitacora.jsonl` | bitácora (solo añadir) y `reportes/` con los Markdown |
 | `~/.config/pixel-desk/rack.json` | servidores del rack (lo escribes tú) |
 | `~/.config/pixel-desk/calendar.json` | suscripciones ICS |
-| `config/monitor.json` | pantallas del monitor |
+| `~/.config/pixel-desk/monitor.json` | pantallas del monitor y servidores remotos |
 
 Se escriben de forma atómica, y si un archivo aparece corrupto se aparta como
 `*.corrupto-<fecha>` en vez de perderse.
@@ -292,6 +316,7 @@ Se escriben de forma atómica, y si un archivo aparece corrupto se aparta como
 main.go             servidor local + ventana GTK/WebKit + lanzador + portapapeles
 board.go            API del tablero          calendar.go   API del calendario + ICS
 sysinfo.go          monitor (/proc, /sys)    rack.go       comprobaciones del rack
+netdata.go          monitor de otras máquinas vía Netdata
 snippets.go         bóveda de comandos       bitacora.go   bitácora y exportación
 mpris.go            tocadiscos ↔ reproductor por D-Bus
 config/             apps.json, monitor.json, rack.json y calendar.json de ejemplo
