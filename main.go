@@ -74,6 +74,35 @@ static gboolean pd_copy_idle(gpointer data) {
 }
 static void pd_copy(const char *text) { g_idle_add(pd_copy_idle, g_strdup(text)); }
 
+// Modo escritorio: la ventana cubre el monitor principal. Al conectar o
+// desconectar pantallas (o cambiar la resolución) xrandr cambia la geometría,
+// así que se vuelve a medir y se recoloca/redimensiona la ventana.
+static GtkWidget *pd_win;
+static guint pd_fit_id;
+
+static void pd_fit(void) {
+  GdkDisplay *d = gdk_display_get_default();
+  GdkMonitor *m = gdk_display_get_primary_monitor(d);
+  if (!m && gdk_display_get_n_monitors(d) > 0) m = gdk_display_get_monitor(d, 0);
+  if (!m) return;
+  GdkRectangle g;
+  gdk_monitor_get_geometry(m, &g);
+  gtk_window_move(GTK_WINDOW(pd_win), g.x, g.y);
+  gtk_window_resize(GTK_WINDOW(pd_win), g.width, g.height);
+}
+
+static gboolean pd_fit_idle(gpointer data) {
+  pd_fit_id = 0;
+  pd_fit();
+  return FALSE;
+}
+
+// xrandr emite los cambios en ráfaga: se agrupan y se aplica uno solo.
+static void pd_screen_changed(void) {
+  if (pd_fit_id) g_source_remove(pd_fit_id);
+  pd_fit_id = g_timeout_add(300, pd_fit_idle, NULL);
+}
+
 static void pd_run(const char *url, int desktop, int accel, int w, int h, const char *shot, int shot_ms) {
   gtk_init(NULL, NULL);
 
@@ -100,6 +129,7 @@ static void pd_run(const char *url, int desktop, int accel, int w, int h, const 
     gtk_window_set_skip_pager_hint(GTK_WINDOW(win), TRUE);
     gtk_window_stick(GTK_WINDOW(win));
 
+    pd_win = win;
     GdkDisplay *d = gdk_display_get_default();
     GdkMonitor *m = gdk_display_get_primary_monitor(d);
     if (!m) m = gdk_display_get_monitor(d, 0);
@@ -107,6 +137,12 @@ static void pd_run(const char *url, int desktop, int accel, int w, int h, const 
     gdk_monitor_get_geometry(m, &g);
     gtk_window_move(GTK_WINDOW(win), g.x, g.y);
     gtk_window_set_default_size(GTK_WINDOW(win), g.width, g.height);
+
+    GdkScreen *scr = gdk_screen_get_default();
+    g_signal_connect(scr, "monitors-changed", G_CALLBACK(pd_screen_changed), NULL);
+    g_signal_connect(scr, "size-changed", G_CALLBACK(pd_screen_changed), NULL);
+    g_signal_connect(d, "monitor-added", G_CALLBACK(pd_screen_changed), NULL);
+    g_signal_connect(d, "monitor-removed", G_CALLBACK(pd_screen_changed), NULL);
   } else {
     gtk_window_set_default_size(GTK_WINDOW(win), w, h);
   }
