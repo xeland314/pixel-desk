@@ -11,6 +11,7 @@ import monitor from './rooms/monitor.js';
 import calendar from './rooms/calendar.js';
 import rack from './rooms/rack.js';
 import { createPanels } from './panels.js';
+import { buildCat } from './cat.js';
 import snippetsPanel from './panels/snippets.js';
 import logPanel from './panels/log.js';
 
@@ -242,7 +243,7 @@ item('code', -42, 0, 4, (g) => {
 });
 
 // Lanzador: la mascota, hecha con cajas y la paleta del sprite original.
-// Teclea en su portátil, mueve la cola y parpadea, todo a pasos.
+// Junto a su portátil: teclea de vez en cuando, duerme siestas, se estira…
 item('launcher', 2, 0, 20, (g) => {
   const rug = new THREE.Mesh(new THREE.CylinderGeometry(17, 17, 0.6, 24), new THREE.MeshLambertMaterial({ color: C.sand }));
   rug.scale.x = 1.7;
@@ -261,63 +262,8 @@ item('launcher', 2, 0, 20, (g) => {
   });
   screen(g, 14, 10, lap.t, -19, 8.6, -0.6);
 
-  // Cuerpo sentado
-  box(g, 16, 10, 12, C.orange, 2, 0.6, -1);
-  box(g, 8, 7, 1, C.cream, 2, 1.6, 5.1);              // pecho
-  for (const z of [-4.5, -0.5]) box(g, 0.6, 7, 2, C.rust, 10.1, 2.6, z);  // rayas del costado
-
-  // Cabeza grande, estilo mascota
-  const head = new THREE.Group();
-  head.position.set(2, 10.6, 0);
-  box(head, 22, 16, 14, C.orange, 0, 0, 0);
-  for (const x of [-8, 8]) {
-    box(head, 6, 5, 4, C.orange, x, 16, 0);           // orejas
-    box(head, 4, 3, 1, C.sand, x, 16, 2.1);
-  }
-  for (const x of [-4, 0, 4]) {
-    box(head, 2, 3, 1, C.rust, x, 13, 7.1);           // rayas de la frente
-    box(head, 2, 0.6, 9, C.rust, x, 16, 1);           // y su continuación arriba
-  }
-  for (const x of [-10.5, 10.5]) box(head, 1, 2, 1, C.rust, x, 5, 7.1);   // mejillas
-  for (const z of [-3, 1]) box(head, 0.6, 3, 2, C.rust, 11.1, 9, z);
-  box(head, 10, 6, 1, C.cream, 0, 0, 7.1);            // hocico
-  box(head, 2, 2, 1, C.rust, 0, 4.4, 7.7);            // nariz
-  const eyes = [-6, 6].map((x) => {
-    const eye = new THREE.Group();
-    eye.position.set(x, 8, 7.1);
-    box(eye, 3, 4, 1, C.brown, 0, -2, 0);
-    box(eye, 1, 1, 0.6, C.cream, -1, 1, 0.4);         // brillo
-    head.add(eye);
-    return eye;
-  });
-  g.add(head);
-
-  // Patas: la izquierda va sobre el teclado
-  const pawL = box(g, 6, 3, 6, C.orange, -9, 2.6, 6);
-  const tipL = box(g, 6, 1, 1, C.cream, -9, 2.6, 9.4);
-  box(g, 5, 3, 5, C.orange, 7, 0.6, 7);
-  box(g, 5, 1, 1, C.cream, 7, 0.6, 9.9);
-
-  // Cola: base tumbada y punta que se mueve
-  box(g, 10, 4, 4, C.orange, 15, 0.6, -4);
-  const tail = new THREE.Group();
-  tail.position.set(20, 3, -4);
-  box(tail, 4, 9, 4, C.orange, 0, 0, 0);
-  box(tail, 4, 2, 4.4, C.rust, 0, 4, 0);
-  box(tail, 4, 4, 4, C.rust, 0, 9, 0);
-  g.add(tail);
-
-  const WAG = [0, -0.16, -0.32, -0.16, 0, 0.12, 0.24, 0.12];
-  return {
-    tick: (step) => {
-      tail.rotation.z = WAG[(step >> 1) % WAG.length];
-      const up = step % 2;                            // teclea
-      pawL.position.y = 4.1 + up;
-      tipL.position.y = 3.1 + up;
-      const blink = step % 40 === 39;
-      for (const e of eyes) e.scale.y = blink ? 0.25 : 1;
-    },
-  };
+  // El gato (poses y rutinas en cat.js).
+  return { tick: buildCat(g, C) };
 });
 
 // Música: tocadiscos; el disco gira a pasos.

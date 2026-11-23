@@ -32,8 +32,13 @@ lo abre. El monitor CRT marca la hora, el cielo de la ventana sigue el día y
 los cajones se deslizan hacia fuera.
 
 ### Un gato de verdad (bueno, de cajas)
-La mascota de la marca, en 3D con la paleta del sprite original. Teclea en su
-portátil, mueve la cola y parpadea, todo a 8 pasos por segundo.
+La mascota de la marca, en 3D con la paleta del sprite original, todo a 8 pasos
+por segundo. Sentado junto a su portátil teclea de vez en cuando, mueve la cola y
+parpadea. Cada pocos minutos hace algo al azar: o se levanta, da su vuelta de
+gato, se enrosca y duerme 8 minutos (luego se estira delante y detrás y vuelve a
+sentarse), o se tumba panza arriba moviendo las patitas. De noche (22–7 h) se
+duerme pronto y sigue así hasta la mañana; de tanto en tanto alza una oreja,
+abre un ojo y vuelve a dormirse.
 
 </td>
 <td width="50%" valign="top">
@@ -327,7 +332,8 @@ netdata.go          monitor de otras máquinas vía Netdata
 snippets.go         bóveda de comandos       bitacora.go   bitácora y exportación
 mpris.go            tocadiscos ↔ reproductor por D-Bus
 config/             apps.json, monitor.json, rack.json y calendar.json de ejemplo
-web/desk.js         la escena (habitación, objetos, gato, selección, entrada)
+web/desk.js         la escena (habitación, objetos, selección, entrada)
+web/cat.js          el gato: poses y rutinas (siesta, estiramiento, panza)
 web/rooms.js        gestor de cuartos        web/rooms/    tablero, monitor, calendario, rack
 web/panels.js       paneles modales          web/panels/   bóveda de comandos y bitácora
 web/desk.css        HUD y etiquetas
