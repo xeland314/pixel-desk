@@ -179,8 +179,10 @@ export function buildCat(parent, C) {
   fixed(pawL, 6, 3, 6, C.orange, -11, 0, 6);
   fixed(pawL, 6, 1, 1, C.cream, -11, 0, 9.4);
   pawL.position.y = 2;
-  fixed(sitPaws, 5, 3, 5, C.orange, 5, 0, 7);
-  fixed(sitPaws, 5, 1, 1, C.cream, 5, 0, 9.9);
+  // La otra, en el suelo: mismo ancho y fondo que la del teclado y más alta,
+  // para que las dos acaben a la misma altura.
+  fixed(sitPaws, 6, 5, 6, C.orange, 5, 0, 6);
+  fixed(sitPaws, 6, 1, 1, C.cream, 5, 0, 9.4);
 
   // «Z» de dormir: dos planos con una letra de 5×5 que suben a pasos.
   const zc = document.createElement('canvas');
