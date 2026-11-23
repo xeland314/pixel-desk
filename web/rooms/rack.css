@@ -106,31 +106,49 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;          /* con muchos nodos, la torre se desplaza */
+  overscroll-behavior: contain;
+  scrollbar-width: none;
   padding: calc(var(--u) * 3) calc(var(--u) * 7);
   display: flex;
   flex-direction: column;
   gap: var(--u);
-}
-/* Railes con agujeros cuadrados a ambos lados. */
-.rk-cab-body::before,
-.rk-cab-body::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: calc(var(--u) * 2);
-  background: repeating-linear-gradient(
+  /* Railes con agujeros cuadrados a ambos lados (fondo fijo: no se desplazan). */
+  --rail: repeating-linear-gradient(
     to bottom,
     var(--line) 0,
     var(--line) calc(var(--u) * 2),
     transparent calc(var(--u) * 2),
     transparent calc(var(--u) * 5)
   );
+  background-image: var(--rail), var(--rail);
+  background-size: calc(var(--u) * 2) 100%;
+  background-position: calc(var(--u) * 2) 0, calc(100% - var(--u) * 2) 0;
+  background-repeat: no-repeat;
+}
+.rk-cab-body::-webkit-scrollbar { display: none; }
+
+/* Aviso de unidades fuera de vista (arriba / abajo). */
+.rk-cab { position: relative; }
+.rk-more {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  padding: var(--u) calc(var(--u) * 4);
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  color: var(--screen);
+  background: var(--accent);
   pointer-events: none;
 }
-.rk-cab-body::before { left: calc(var(--u) * 2); }
-.rk-cab-body::after { right: calc(var(--u) * 2); }
+.rk-more[hidden] { display: none; }
+.rk-more.up { top: calc(var(--u) * 10); }
+.rk-more.down { bottom: var(--u); }
 
 .rk-blank {
   flex: none;
@@ -307,8 +325,13 @@
   display: flex;
   flex-direction: column;
   gap: calc(var(--u) * 4);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;          /* nodos con muchas comprobaciones */
+  overscroll-behavior: contain;
+  scrollbar-width: none;
 }
+.rk-detail::-webkit-scrollbar { display: none; }
+.rk-detail > * { flex: none; }
 .rk-d-head { display: flex; align-items: center; gap: calc(var(--u) * 3); }
 .rk-d-meta {
   font-family: var(--font-term);

@@ -173,13 +173,38 @@ export default {
         const slots = Math.max(0, MIN_SLOTS - rack.nodes.reduce((a, n) => a + (n.checks.length > 4 ? 2 : 1), 0));
         const blanks = [];
         for (let i = 0; i < slots; i++) { const b = el('div', 'rk-blank'); blanks.push(b); body.appendChild(b); }
-        cab.append(head, body);
+        const moreUp = el('div', 'rk-more up');
+        const moreDown = el('div', 'rk-more down');
+        moreUp.hidden = moreDown.hidden = true;
+        cab.append(head, body, moreUp, moreDown);
         racksEl.appendChild(cab);
-        cabs.push({ el: cab, body, rack, ids, empty, blanks });
+        const c = { el: cab, body, rack, ids, empty, blanks, moreUp, moreDown };
+        body.addEventListener('scroll', () => paintMore(c), { passive: true });
+        cabs.push(c);
       }
       rackIdx = Math.min(rackIdx, cabs.length - 1);
       applyFilter();
     }
+
+    /** Cuenta los nodos (visibles) que quedan por encima o por debajo del hueco del armario. */
+    function paintMore(cab) {
+      const top = cab.body.scrollTop;
+      const bottom = top + cab.body.clientHeight;
+      let up = 0;
+      let down = 0;
+      for (const id of cab.ids) {
+        const e = units.get(id).el;
+        if (e.hidden) continue;
+        if (e.offsetTop < top - 1) up++;
+        else if (e.offsetTop + e.offsetHeight > bottom + 1) down++;
+      }
+      cab.moreUp.hidden = up === 0;
+      cab.moreDown.hidden = down === 0;
+      if (up) cab.moreUp.textContent = `▲ ${up} MÁS`;
+      if (down) cab.moreDown.textContent = `▼ ${down} MÁS`;
+    }
+    const paintAllMore = () => cabs.forEach(paintMore);
+    new ResizeObserver(paintAllMore).observe(racksEl);
 
     const levelOf = (id) => (status && status.nodes[id] ? lv(status.nodes[id].level) : 'none');
     const isProblem = (id) => RANK[levelOf(id)] >= RANK.warn;
@@ -192,6 +217,7 @@ export default {
         cab.empty.hidden = !(filter && vis.size === 0);
         cab.blanks.forEach((b) => { b.hidden = filter; });
       });
+      paintAllMore();
       if (cabs.length) {
         const vis = visibleIds(rackIdx);
         if (!vis.includes(selId)) selId = vis[0] || null;
@@ -205,6 +231,7 @@ export default {
       for (const [id, u] of units) u.el.classList.toggle('sel', id === selId);
       const u = units.get(selId);
       if (u) u.el.scrollIntoView({ block: 'nearest' });
+      paintAllMore();
       renderDetail();
     }
 
@@ -232,7 +259,11 @@ export default {
       if (filter) applyFilter(); else renderDetail();
     }
 
+    let detailId = null;
     function renderDetail() {
+      // Se repinta cada 2 s: conservar el desplazamiento si sigue el mismo nodo.
+      const keep = detailId === selId ? detail.scrollTop : 0;
+      detailId = selId;
       detail.replaceChildren();
       const u = units.get(selId);
       if (!u) {
@@ -275,6 +306,7 @@ export default {
         card.appendChild(bars);
         detail.appendChild(card);
       });
+      detail.scrollTop = keep;
     }
 
     function say(text, kind) {
