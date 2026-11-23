@@ -7,7 +7,7 @@
 // saltos, como el resto de la escena.
 //
 // Rutinas:
-//   sentado   teclea de vez en cuando, parpadea y mueve la cola (reposo)
+//   sentado   parpadea y mueve la cola (reposo)
 //   siesta    se levanta, da media vuelta a pasitos, se acuesta y duerme
 //             8 minutos; de noche (22–7 h) duerme hasta la mañana y, de
 //             tanto en tanto, alza una oreja y abre un ojo. Al despertar se
@@ -171,18 +171,13 @@ export function buildCat(parent, C) {
     return { eye, shine };
   });
 
-  // Patas de estar sentado: la izquierda sobre el teclado del portátil.
+  // Patas de estar sentado: las dos delante del pecho, simétricas.
   const sitPaws = new THREE.Group();
   root.add(sitPaws);
-  const pawL = new THREE.Group();
-  sitPaws.add(pawL);
-  fixed(pawL, 6, 3, 6, C.orange, -11, 0, 6);
-  fixed(pawL, 6, 1, 1, C.cream, -11, 0, 9.4);
-  pawL.position.y = 2;
-  // La otra, en el suelo: mismo ancho y fondo que la del teclado y más alta,
-  // para que las dos acaben a la misma altura.
-  fixed(sitPaws, 6, 5, 6, C.orange, 5, 0, 6);
-  fixed(sitPaws, 6, 1, 1, C.cream, 5, 0, 9.4);
+  for (const x of [-5, 5]) {
+    fixed(sitPaws, 6, 5, 6, C.orange, x, 0, 6);
+    fixed(sitPaws, 6, 1, 1, C.cream, x, 0, 9.4);
+  }
 
   // «Z» de dormir: dos planos con una letra de 5×5 que suben a pasos.
   const zc = document.createElement('canvas');
@@ -251,7 +246,6 @@ export function buildCat(parent, C) {
     });
 
     sitPaws.visible = P.sit >= 0.5;
-    pawL.position.y = 2 + fx.tap;
 
     zs.forEach((z, i) => {
       z.visible = fx.z >= 0;
@@ -324,19 +318,16 @@ export function buildCat(parent, C) {
   else if (q === 'belly') queue = bellyUp();
   next();
 
-  // Detalles que van encima de la pose: parpadeo, tecleo, oreja y ojo al
-  // dormir, respiración, la cola, las patitas…
+  // Detalles que van encima de la pose: parpadeo, oreja y ojo al dormir,
+  // respiración, la cola, las patitas…
   let blinkAt = 0;
-  let tapAt = 0;
-  let tapK = -1;
   let peekAt = 0;
   let peekK = -1;
-  const TAP = [1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0];
   const WAG = [0, -0.16, -0.32, -0.16, 0, 0.12, 0.24, 0.12];
 
   return (step) => {
     const now = Date.now();
-    const fx = { bob: 0, breath: 0, wag: 0, tap: 0, ear: [0, 0], eye: [0, 0], gait: {}, z: -1 };
+    const fx = { bob: 0, breath: 0, wag: 0, ear: [0, 0], eye: [0, 0], gait: {}, z: -1 };
     if (frozen) { apply(frozen, fx); return; }
 
     k++;
@@ -356,12 +347,6 @@ export function buildCat(parent, C) {
     }
     if (mode === 'sit') {
       fx.wag = WAG[(step >> 1) % WAG.length];
-      if (!tapAt) tapAt = now + rnd(6000, 15000);
-      if (tapK < 0 && now >= tapAt) tapK = 0;
-      if (tapK >= 0) {
-        fx.tap = TAP[tapK++];
-        if (tapK >= TAP.length) { tapK = -1; tapAt = now + rnd(6000, 15000); }
-      }
     } else if (mode === 'walk') {
       const s = step % 2 ? 0.22 : -0.22;            // pasitos cortos
       fx.gait = { fl: s, br: s, fr: -s, bl: -s };

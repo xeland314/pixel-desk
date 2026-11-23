@@ -33,7 +33,7 @@ los cajones se deslizan hacia fuera.
 
 ### Un gato de verdad (bueno, de cajas)
 La mascota de la marca, en 3D con la paleta del sprite original, todo a 8 pasos
-por segundo. Sentado junto a su portátil teclea de vez en cuando, mueve la cola y
+por segundo. Sentado junto a su portátil, con las patitas juntas, mueve la cola y
 parpadea. Cada pocos minutos hace algo al azar: o se levanta, da su vuelta de
 gato, se enrosca y duerme 8 minutos (luego se estira delante y detrás y vuelve a
 sentarse), o se tumba panza arriba moviendo las patitas. De noche (22–7 h) se
