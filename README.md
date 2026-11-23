@@ -219,9 +219,16 @@ con copia de seguridad de lo que había:
 ```bash
 python3 theme/icons.py                 # convierte los iconos (ver abajo)
 python3 theme/theme.py apply           # instala y activa (guarda lo anterior en theme/backup/)
-python3 theme/theme.py apply --light   # variante clara
+python3 theme/theme.py apply --light   # activa la variante clara
+python3 theme/theme.py switch light    # alterna sin regenerar (o dark)
 python3 theme/theme.py revert          # vuelve a como estaba
 ```
+
+Las dos variantes se instalan a la vez (`PixelDesk` / `PixelDesk-Light`,
+`pixel-desk` / `pixel-desk-light`). Con el tema aplicado, la tecla `T` de
+pixel-desk cambia también el del sistema: pcmanfm-qt, el panel, rofi y los
+marcos de las ventanas pasan a claro u oscuro en vivo. pixel-desk recuerda la
+última elección para el siguiente arranque (salvo que se pase `-theme`).
 
 | Pieza | Resultado |
 |---|---|

@@ -300,6 +300,12 @@ func main() {
 	shot := flag.String("shot", "", "guardar una captura PNG y salir")
 	shotMs := flag.Int("shot-ms", 2500, "espera antes de la captura (ms)")
 	flag.Parse()
+	// Sin -theme explícito se arranca con el último tema elegido con T.
+	themeSet := false
+	flag.Visit(func(f *flag.Flag) { themeSet = themeSet || f.Name == "theme" })
+	if t := savedTheme(); !themeSet && t != "" {
+		*theme = t
+	}
 
 	apps, src := loadApps(*config)
 	byID := map[string]App{}

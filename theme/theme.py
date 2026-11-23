@@ -3,15 +3,19 @@
 
 Los colores salen de web/assets/styles/tokens.css, igual que la escena.
 
-    theme.py build     genera theme/out/ (no toca nada fuera del proyecto)
-    theme.py install   build + copia a ~/.themes, ~/.local/share/lxqt/themes
-                       y ~/.local/share/icons
-                       (queda disponible, pero sin activar)
-    theme.py apply     install + lo activa, guardando antes lo que había
-    theme.py revert    restaura lo guardado por apply
+    theme.py build          genera theme/out/<variante>/ (no toca nada fuera del proyecto)
+    theme.py install        build de las dos variantes + copia a ~/.themes,
+                            ~/.local/share/lxqt/themes y ~/.local/share/icons
+                            (quedan disponibles, pero sin activar)
+    theme.py apply          install + activa una variante, guardando antes lo que había
+    theme.py switch light   cambia a la variante clara ya instalada (o dark),
+                            sin regenerar nada; es lo que llama pixel-desk con T
+    theme.py revert         restaura lo guardado por apply
 
-Con --light (en build, install o apply) se genera la variante clara, con la
-paleta de los carruseles de cover-creator-cli. Incluye también un tema de rofi.
+Con --light (en build o apply) se usa la variante clara, con la paleta de los
+carruseles de cover-creator-cli. Las dos variantes se instalan con nombres
+distintos (PixelDesk / PixelDesk-Light, pixel-desk / pixel-desk-light) para
+poder alternar en vivo. Incluye también un tema de rofi.
 """
 import os
 import re
@@ -23,15 +27,17 @@ import zlib
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-OUT = HERE / "out"
+LIGHT = "--light" in sys.argv or sys.argv[1:3] == ["switch", "light"]
+VARIANT = "light" if LIGHT else "dark"
+OUT = HERE / "out" / VARIANT
 BACKUP = HERE / "backup"
 TOKENS = HERE.parent / "web/assets/styles/tokens.css"
-LXQT_BASE = Path("/usr/share/lxqt/themes/light" if "--light" in sys.argv else "/usr/share/lxqt/themes/dark")
+LXQT_BASE = Path(f"/usr/share/lxqt/themes/{VARIANT}")
 
-XFWM_NAME = "PixelDesk"
-ICON_NAME = "PixelDesk"
-ICON_PARENT = "Papirus" if "--light" in sys.argv else "Papirus-Dark"   # lo que no se convierte
-LXQT_NAME = "pixel-desk"
+XFWM_NAME = "PixelDesk-Light" if LIGHT else "PixelDesk"
+ICON_NAME = "PixelDesk-Light" if LIGHT else "PixelDesk"
+ICON_PARENT = "Papirus" if LIGHT else "Papirus-Dark"   # lo que no se convierte
+LXQT_NAME = "pixel-desk-light" if LIGHT else "pixel-desk"
 
 HOME = Path.home()
 CONFIG = Path(os.environ.get("XDG_CONFIG_HOME") or HOME / ".config")
@@ -40,7 +46,7 @@ XFWM_DEST = HOME / ".themes" / XFWM_NAME / "xfwm4"
 LXQT_DEST = DATA / "lxqt/themes" / LXQT_NAME
 ICON_DEST = DATA / "icons" / ICON_NAME
 ROFI_DIR = CONFIG / "rofi"
-ROFI_THEME = ROFI_DIR / "themes" / "pixel-desk.rasi"
+ROFI_THEME = ROFI_DIR / "themes" / f"{LXQT_NAME}.rasi"
 ROFI_CONF = ROFI_DIR / "config.rasi"
 LXQT_CONF = CONFIG / "lxqt/lxqt.conf"
 PANEL_CONF = CONFIG / "lxqt/panel.conf"
@@ -57,7 +63,6 @@ def tokens():
 
 
 T = tokens()
-LIGHT = "--light" in sys.argv
 PANEL, PANEL2, LINE = T["--panel"], T["--panel-2"], T["--line"]
 INK, MUTED, ACCENT = T["--ink"], T["--muted"], T["--accent"]
 GRAY, CHARCOAL, BAD, OK = T["--cat-gray"], T["--cat-charcoal"], T["--sem-bad"], T["--sem-ok"]
@@ -576,7 +581,7 @@ def build_icons(dest):
 def build_rofi(dest):
     """Tema de rofi: marco de 3 px, sin redondeos, selección en bloque."""
     dest.mkdir(parents=True, exist_ok=True)
-    (dest / "pixel-desk.rasi").write_text(f"""/* pixel-desk ({'claro' if LIGHT else 'oscuro'}) — generado por theme.py, no editar a mano */
+    (dest / f"{LXQT_NAME}.rasi").write_text(f"""/* pixel-desk ({'claro' if LIGHT else 'oscuro'}) — generado por theme.py, no editar a mano */
 configuration {{
     show-icons: true;
     icon-theme: "{ICON_NAME}";
@@ -782,7 +787,7 @@ def build():
     print(f"generado en {OUT}")
 
 
-def install():
+def install_one():
     build()
     for src, dst in ((OUT / "xfwm4", XFWM_DEST), (OUT / "lxqt", LXQT_DEST), (OUT / "icons", ICON_DEST)):
         if dst.exists():
@@ -791,8 +796,17 @@ def install():
         shutil.copytree(src, dst, symlinks=True)
         print(f"instalado {dst}")
     ROFI_THEME.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(OUT / "rofi/pixel-desk.rasi", ROFI_THEME)
+    shutil.copy2(OUT / f"rofi/{ROFI_THEME.name}", ROFI_THEME)
     print(f"instalado {ROFI_THEME}")
+
+
+def install():
+    """Instala las dos variantes; cada una en su propio proceso (la paleta se
+    fija al importar según --light)."""
+    for flags in ([], ["--light"]):
+        r = subprocess.run([sys.executable, __file__, "install-one", *flags])
+        if r.returncode:
+            sys.exit(r.returncode)
 
 
 def apply():
@@ -805,6 +819,16 @@ def apply():
     if not (BACKUP / "xfwm4-theme").exists():
         (BACKUP / "xfwm4-theme").write_text(xfconf("-p", "/general/theme").stdout.strip() + "\n")
     print(f"copia de seguridad en {BACKUP}")
+    switch()
+
+
+def switch():
+    """Activa la variante ya instalada: lxqt.conf, panel, rofi y xfwm4. Las
+    apps Qt de LXQt (pcmanfm-qt, panel…) recogen el cambio en vivo."""
+    if not (BACKUP / "lxqt.conf").exists():
+        sys.exit("el tema no está aplicado: ejecuta antes theme.py apply")
+    if not (LXQT_DEST.exists() and ICON_DEST.exists() and ROFI_THEME.exists()):
+        sys.exit(f"falta la variante {VARIANT}: ejecuta theme.py install")
     text = LXQT_CONF.read_text()
     text = set_ini(text, "General", {"theme": LXQT_NAME, "icon_theme": ICON_NAME})
     text = set_ini(text, "Palette", PALETTE)
@@ -842,7 +866,8 @@ def revert():
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if a != "--light"]
     cmd = args[0] if args else ""
-    actions = {"build": build, "install": install, "apply": apply, "revert": revert}
-    if cmd not in actions:
+    actions = {"build": build, "install": install, "install-one": install_one,
+               "apply": apply, "switch": switch, "revert": revert}
+    if cmd not in actions or (cmd == "switch" and args[1:] not in (["light"], ["dark"])):
         sys.exit(__doc__)
     actions[cmd]()

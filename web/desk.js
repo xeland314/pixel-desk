@@ -546,10 +546,14 @@ addEventListener('keydown', (ev) => {
     return;
   }
   if (ev.key.toLowerCase() === 't' && !ev.ctrlKey) {
+    const mode = THEME === 'light' ? 'dark' : 'light';
     const next = new URLSearchParams(location.search);
-    next.set('theme', THEME === 'light' ? 'dark' : 'light');
+    next.set('theme', mode);
     next.set('room', String(rooms.index + 1));
-    location.search = next.toString();
+    // El backend lo recuerda y cambia también el tema del sistema (theme.go).
+    fetch(`/api/theme?mode=${mode}`, { method: 'POST', headers: { 'X-Desk-Token': TOKEN } })
+      .catch(() => {})
+      .finally(() => { location.search = next.toString(); });
     return;
   }
   if (!rooms.onDesk()) return;
